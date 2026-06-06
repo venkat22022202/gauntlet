@@ -29,3 +29,7 @@ yarn-debug.log*
 
 # vercel
 .vercel
+
+# private / proprietary agent prompts dropped in for local testing — never commit
+MAADA_*.md
+*_AGENT_REQUIREMENTS.md

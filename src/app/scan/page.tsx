@@ -17,6 +17,7 @@ import {
   ArrowLeft,
   Eye,
   EyeOff,
+  RefreshCw,
 } from "lucide-react";
 import { ScoreRing } from "@/components/score-ring";
 
@@ -79,6 +80,8 @@ export default function ScanPage() {
   const [showKey, setShowKey] = useState(false);
   const [makePublic, setMakePublic] = useState(false);
   const [agentName, setAgentName] = useState("");
+  const [fetchedModels, setFetchedModels] = useState<string[]>([]);
+  const [loadingModels, setLoadingModels] = useState(false);
   const [running, setRunning] = useState(false);
   const [total, setTotal] = useState(0);
   const [results, setResults] = useState<Outcome[]>([]);
@@ -148,6 +151,30 @@ export default function ScanPage() {
       toast.error((err as Error).message || "Scan failed");
     } finally {
       setRunning(false);
+    }
+  }
+
+  async function loadModels() {
+    if (!apiKey.trim()) {
+      toast.error("Add an API key first to list its models.");
+      return;
+    }
+    setLoadingModels(true);
+    try {
+      const res = await fetch("/api/models", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ endpoint, apiKey }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`);
+      const models: string[] = data.models ?? [];
+      setFetchedModels(models);
+      toast.success(`Loaded ${models.length} text models from ${new URL(endpoint).host}`);
+    } catch (err) {
+      toast.error((err as Error).message || "Couldn't load models");
+    } finally {
+      setLoadingModels(false);
     }
   }
 
@@ -238,7 +265,18 @@ export default function ScanPage() {
             </button>
           </div>
 
-          <label className="block text-xs font-mono text-text-mid mb-1.5">MODEL</label>
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="block text-xs font-mono text-text-mid">MODEL</label>
+            <button
+              type="button"
+              onClick={loadModels}
+              disabled={loadingModels}
+              className="text-[10px] font-mono text-violet-soft hover:text-violet flex items-center gap-1 disabled:opacity-50"
+            >
+              <RefreshCw className={`w-3 h-3 ${loadingModels ? "animate-spin" : ""}`} />
+              {loadingModels ? "loading…" : fetchedModels.length ? `${fetchedModels.length} loaded ↻` : "load all models"}
+            </button>
+          </div>
           <input
             value={model}
             onChange={(e) => setModel(e.target.value)}
@@ -246,7 +284,7 @@ export default function ScanPage() {
             className="w-full glass rounded-lg px-3 py-2 text-sm font-mono mb-4 outline-none focus:border-violet/50"
           />
           <datalist id="models">
-            {PRESET_MODELS.map((m) => (
+            {(fetchedModels.length ? fetchedModels : PRESET_MODELS).map((m) => (
               <option key={m} value={m} />
             ))}
           </datalist>
