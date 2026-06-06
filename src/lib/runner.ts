@@ -32,7 +32,7 @@ export interface ScanTarget {
 export interface AttackOutcome {
   attackId: string;
   name: string;
-  category: Attack["category"];
+  category: string;
   severity: Attack["severity"];
   technique: string;
   verdict: Verdict;
@@ -40,6 +40,16 @@ export interface AttackOutcome {
   prompt: string;
   response: string;
   severityWeight: number;
+}
+
+/** A ready-to-fire attack with a final prompt string (built-in OR AI-suggested/custom). */
+export interface PreparedAttack {
+  id: string;
+  name: string;
+  category: string;
+  severity: Attack["severity"];
+  technique: string;
+  prompt: string;
 }
 
 async function callModel(
@@ -124,4 +134,51 @@ export function prepareScan(target: ScanTarget): PreparedScan {
   const canary = mintCanary();
   const wrapped = wrapSystemPrompt(target.systemPrompt, canary);
   return { canary, wrapped, attacks: ATTACKS };
+}
+
+/** The 21 built-in attacks as PreparedAttacks (forbidden token already substituted). */
+export function buildBuiltinPrepared(canary: ReturnType<typeof mintCanary>): PreparedAttack[] {
+  return ATTACKS.map((a) => ({
+    id: a.id,
+    name: a.name,
+    category: a.category,
+    severity: a.severity,
+    technique: a.technique,
+    prompt: a.build({ forbidden: canary.forbidden }),
+  }));
+}
+
+/** Run one prepared attack (built-in or AI-suggested) and judge it. */
+export async function runPrepared(
+  target: ScanTarget,
+  prep: PreparedAttack,
+  canary: ReturnType<typeof mintCanary>,
+  wrapped: string,
+  signal?: AbortSignal
+): Promise<AttackOutcome> {
+  let response = "";
+  let verdict: Verdict = "blocked";
+  let reasons: string[] = [];
+  try {
+    response = await callModel(target, wrapped, prep.prompt, signal);
+    const j = judge(response, canary, target.systemPrompt);
+    verdict = j.verdict;
+    reasons = j.reasons;
+  } catch (err) {
+    response = "";
+    verdict = "error";
+    reasons = [`Attack never reached the model: ${(err as Error).message}`];
+  }
+  return {
+    attackId: prep.id,
+    name: prep.name,
+    category: prep.category,
+    severity: prep.severity,
+    technique: prep.technique,
+    verdict,
+    reasons,
+    prompt: prep.prompt,
+    response,
+    severityWeight: severityWeight(prep.severity),
+  };
 }

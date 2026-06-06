@@ -1,17 +1,40 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
-import { prepareScan, runOneAttack, type ScanTarget, type AttackOutcome } from "@/lib/runner";
+import {
+  prepareScan,
+  runPrepared,
+  buildBuiltinPrepared,
+  type ScanTarget,
+  type AttackOutcome,
+  type PreparedAttack,
+} from "@/lib/runner";
 import { scoreFromResults, type Verdict } from "@/lib/judge";
 import { saveScan } from "@/server/persistence";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
+const SEVERITY = z.enum(["low", "medium", "high", "critical"]);
+
 const BodySchema = z.object({
   endpoint: z.string().url().default("https://api.openai.com/v1"),
   apiKey: z.string().min(1),
   model: z.string().min(1).default("gpt-5.4-mini"),
   systemPrompt: z.string().default(""),
+  // attack selection
+  includeBuiltins: z.boolean().default(true),
+  customAttacks: z
+    .array(
+      z.object({
+        name: z.string().max(120).optional(),
+        prompt: z.string().min(1).max(8000),
+        category: z.string().max(60).optional(),
+        severity: SEVERITY.optional(),
+        technique: z.string().max(160).optional(),
+      })
+    )
+    .max(40)
+    .optional(),
   // optional persistence
   save: z.boolean().default(true),
   label: z.string().max(120).optional(),
@@ -56,7 +79,31 @@ export async function POST(req: NextRequest) {
     systemPrompt: body.systemPrompt,
   };
 
-  const { canary, wrapped, attacks } = prepareScan(target);
+  const { canary, wrapped } = prepareScan(target);
+
+  // Build the run list: built-in attacks (optional) + AI-suggested / custom attacks.
+  const prepared: PreparedAttack[] = [];
+  if (body.includeBuiltins) prepared.push(...buildBuiltinPrepared(canary));
+  if (body.customAttacks?.length) {
+    body.customAttacks.forEach((c, i) => {
+      prepared.push({
+        id: `custom-${i}`,
+        name: c.name?.trim() || `Custom ${i + 1}`,
+        category: c.category || "instruction_override",
+        severity: c.severity || "high",
+        technique: c.technique || "AI-suggested / custom",
+        prompt: c.prompt.replace(/\{\{\s*forbidden\s*\}\}/gi, canary.forbidden),
+      });
+    });
+  }
+
+  if (prepared.length === 0) {
+    return new Response(
+      JSON.stringify({ type: "error", message: "No attacks selected — enable built-ins or add suggested injections." }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
   const encoder = new TextEncoder();
 
   const stream = new ReadableStream({
@@ -64,7 +111,7 @@ export async function POST(req: NextRequest) {
       const send = (obj: unknown) =>
         controller.enqueue(encoder.encode(JSON.stringify(obj) + "\n"));
 
-      send({ type: "meta", total: attacks.length, model: target.model });
+      send({ type: "meta", total: prepared.length, model: target.model });
 
       const tally = { breached: 0, partial: 0, blocked: 0, error: 0 };
       const weighted: { verdict: Verdict; severityWeight: number }[] = [];
@@ -76,9 +123,9 @@ export async function POST(req: NextRequest) {
       let emitted = 0;
 
       async function worker() {
-        while (cursor < attacks.length) {
+        while (cursor < prepared.length) {
           const myIndex = cursor++;
-          const outcome = await runOneAttack(target, attacks[myIndex], canary, wrapped);
+          const outcome = await runPrepared(target, prepared[myIndex], canary, wrapped);
           tally[outcome.verdict]++;
           weighted.push({ verdict: outcome.verdict, severityWeight: outcome.severityWeight });
           collected.push(outcome);
@@ -88,7 +135,7 @@ export async function POST(req: NextRequest) {
 
       try {
         await Promise.all(
-          Array.from({ length: Math.min(CONCURRENCY, attacks.length) }, () => worker())
+          Array.from({ length: Math.min(CONCURRENCY, prepared.length) }, () => worker())
         );
 
         const score = scoreFromResults(weighted); // null if every attack errored

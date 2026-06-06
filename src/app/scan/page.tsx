@@ -19,6 +19,9 @@ import {
   EyeOff,
   RefreshCw,
   Ban,
+  Sparkles,
+  X,
+  Plus,
 } from "lucide-react";
 import { ScoreRing } from "@/components/score-ring";
 
@@ -44,6 +47,21 @@ interface Summary {
   errored?: number;
   scanId?: string | null;
 }
+
+interface SuggestedAttack {
+  name: string;
+  prompt: string;
+  category?: string;
+  severity?: string;
+  technique?: string;
+}
+
+const SEV_COLOR: Record<string, string> = {
+  low: "#6b6680",
+  medium: "#f5a524",
+  high: "#ff5d7a",
+  critical: "#ff2d55",
+};
 
 const V: Record<Verdict, { c: string; label: string; Icon: typeof ShieldCheck }> = {
   blocked: { c: "#22c55e", label: "BLOCKED", Icon: ShieldCheck },
@@ -85,6 +103,9 @@ export default function ScanPage() {
   const [agentName, setAgentName] = useState("");
   const [fetchedModels, setFetchedModels] = useState<string[]>([]);
   const [loadingModels, setLoadingModels] = useState(false);
+  const [suggested, setSuggested] = useState<SuggestedAttack[]>([]);
+  const [loadingSuggest, setLoadingSuggest] = useState(false);
+  const [includeBuiltins, setIncludeBuiltins] = useState(true);
   const [running, setRunning] = useState(false);
   const [total, setTotal] = useState(0);
   const [results, setResults] = useState<Outcome[]>([]);
@@ -112,6 +133,8 @@ export default function ScanPage() {
           apiKey,
           model,
           systemPrompt,
+          includeBuiltins,
+          customAttacks: suggested.filter((a) => a.prompt.trim().length > 0),
           makePublic,
           agentName: makePublic ? agentName : undefined,
         }),
@@ -180,6 +203,37 @@ export default function ScanPage() {
       setLoadingModels(false);
     }
   }
+
+  async function loadSuggested() {
+    if (!systemPrompt.trim()) {
+      toast.error("Add a system prompt first — the AI tailors attacks to it.");
+      return;
+    }
+    setLoadingSuggest(true);
+    try {
+      const res = await fetch("/api/suggest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ systemPrompt, count: 8 }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`);
+      const atks: SuggestedAttack[] = data.attacks ?? [];
+      setSuggested(atks);
+      setIncludeBuiltins(false); // focus on the tailored ones; user can re-enable built-ins
+      toast.success(`Crafted ${atks.length} tailored injections with ${data.model}`);
+    } catch (err) {
+      toast.error((err as Error).message || "Couldn't generate suggestions");
+    } finally {
+      setLoadingSuggest(false);
+    }
+  }
+
+  const updateSuggested = (i: number, field: keyof SuggestedAttack, val: string) =>
+    setSuggested((s) => s.map((a, idx) => (idx === i ? { ...a, [field]: val } : a)));
+  const deleteSuggested = (i: number) => setSuggested((s) => s.filter((_, idx) => idx !== i));
+  const addSuggested = () =>
+    setSuggested((s) => [...s, { name: `Custom ${s.length + 1}`, prompt: "", severity: "high", category: "instruction_override", technique: "manual" }]);
 
   const progress = total ? Math.round((results.length / total) * 100) : 0;
 
@@ -297,8 +351,79 @@ export default function ScanPage() {
             value={systemPrompt}
             onChange={(e) => setSystemPrompt(e.target.value)}
             rows={7}
-            className="w-full glass rounded-lg px-3 py-2 text-sm font-mono mb-5 outline-none focus:border-violet/50 resize-y"
+            className="w-full glass rounded-lg px-3 py-2 text-sm font-mono mb-4 outline-none focus:border-violet/50 resize-y"
           />
+
+          {/* AI-tailored injections */}
+          <button
+            type="button"
+            onClick={loadSuggested}
+            disabled={loadingSuggest}
+            className="w-full inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-violet-soft border border-violet/40 bg-violet/5 hover:bg-violet/10 transition-colors disabled:opacity-50 mb-2"
+          >
+            {loadingSuggest ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+            {loadingSuggest ? "the strategist is thinking…" : "Load suggested injections (AI)"}
+          </button>
+          <p className="text-[11px] text-text-lo mb-4 leading-snug">
+            A clever model reads your prompt and writes attacks tailored to its exact rules. Edit them, add your own, or run with only these.
+          </p>
+
+          {suggested.length > 0 && (
+            <div className="mb-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-mono text-violet-soft">{suggested.length} tailored attacks</span>
+                <button
+                  type="button"
+                  onClick={addSuggested}
+                  className="text-[11px] text-text-mid hover:text-text-hi inline-flex items-center gap-1"
+                >
+                  <Plus className="w-3 h-3" /> add your own
+                </button>
+              </div>
+              {suggested.map((a, i) => (
+                <div key={i} className="glass rounded-lg p-2.5">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <input
+                      value={a.name}
+                      onChange={(e) => updateSuggested(i, "name", e.target.value)}
+                      className="flex-1 bg-transparent text-xs font-semibold outline-none min-w-0"
+                    />
+                    <span
+                      className="text-[9px] font-mono px-1.5 py-0.5 rounded shrink-0"
+                      style={{
+                        color: SEV_COLOR[a.severity ?? "high"],
+                        border: `1px solid ${SEV_COLOR[a.severity ?? "high"]}55`,
+                      }}
+                    >
+                      {(a.severity ?? "high").toUpperCase()}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => deleteSuggested(i)}
+                      className="text-text-lo hover:text-crimson shrink-0"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  <textarea
+                    value={a.prompt}
+                    onChange={(e) => updateSuggested(i, "prompt", e.target.value)}
+                    rows={2}
+                    className="w-full bg-black/20 rounded p-2 text-[11px] font-mono outline-none resize-y"
+                  />
+                </div>
+              ))}
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={includeBuiltins}
+                  onChange={(e) => setIncludeBuiltins(e.target.checked)}
+                  className="accent-violet"
+                />
+                <span className="text-[11px] text-text-mid">Also run the 21 built-in attacks</span>
+              </label>
+            </div>
+          )}
 
           <label className="flex items-center gap-2 mb-3 cursor-pointer select-none">
             <input
