@@ -50,6 +50,13 @@ const V: Record<Verdict, { c: string; label: string; Icon: typeof ShieldCheck }>
 
 const PRESET_MODELS = ["gpt-4o-mini", "gpt-4o", "gpt-4.1-mini", "o4-mini", "claude-sonnet-4-5-20250929", "gemini-2.0-flash"];
 
+const PROVIDER_PRESETS = [
+  { id: "openai", label: "OpenAI", endpoint: "https://api.openai.com/v1", model: "gpt-4o-mini", keyHint: "OpenAI key (sk-…)" },
+  { id: "gemini", label: "Google Gemini", endpoint: "https://generativelanguage.googleapis.com/v1beta/openai", model: "gemini-2.0-flash", keyHint: "Google AI Studio key — same one your ADK/Gemini agent uses" },
+  { id: "openrouter", label: "OpenRouter", endpoint: "https://openrouter.ai/api/v1", model: "openai/gpt-4o-mini", keyHint: "OpenRouter key (sk-or-…)" },
+  { id: "local", label: "Local (Ollama)", endpoint: "http://localhost:11434/v1", model: "llama3.1", keyHint: "any non-empty string for local" },
+];
+
 export default function ScanPage() {
   const [endpoint, setEndpoint] = useState("https://api.openai.com/v1");
   const [apiKey, setApiKey] = useState("");
@@ -154,9 +161,36 @@ export default function ScanPage() {
           <h1 className="font-display text-xl font-bold mb-1 flex items-center gap-2">
             <ServerCog className="w-5 h-5 text-violet" /> Target
           </h1>
-          <p className="text-xs text-text-lo mb-5">
+          <p className="text-xs text-text-lo mb-4">
             Test only a system you own or are authorized to test.
           </p>
+
+          <div className="mb-4">
+            <div className="text-[10px] font-mono text-text-lo mb-1.5">PROVIDER PRESET</div>
+            <div className="flex flex-wrap gap-1.5">
+              {PROVIDER_PRESETS.map((p) => {
+                const active = endpoint === p.endpoint;
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => { setEndpoint(p.endpoint); setModel(p.model); }}
+                    className={`text-xs font-mono px-2.5 py-1 rounded-lg border transition-colors ${
+                      active ? "border-crimson/60 text-crimson bg-crimson/10" : "border-white/10 text-text-mid hover:text-text-hi"
+                    }`}
+                  >
+                    {p.label}
+                  </button>
+                );
+              })}
+            </div>
+            {endpoint.includes("googleapis") && (
+              <p className="text-[11px] text-violet-soft mt-2 leading-snug">
+                Testing a Google ADK / Gemini agent: paste your agent&apos;s system instruction below and use your
+                Google AI Studio key. This red-teams the prompt + model layer your agent runs on.
+              </p>
+            )}
+          </div>
 
           <label className="block text-xs font-mono text-text-mid mb-1.5">ENDPOINT (OpenAI-compatible)</label>
           <input

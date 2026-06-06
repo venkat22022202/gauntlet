@@ -10,14 +10,13 @@ import {
   Radar,
   Swords,
   Skull,
-  Zap,
-  Target,
   Fingerprint,
   ScanLine,
   TriangleAlert,
   ArrowRight,
   Github,
   KeyRound,
+  Target,
 } from "lucide-react";
 
 // ── Live hero console (illustrative) ─────────────────────────
@@ -47,61 +46,77 @@ function HeroConsole() {
       const t = setTimeout(() => setN(0), 2600);
       return () => clearTimeout(t);
     }
-    const t = setTimeout(() => setN((v) => v + 1), 520);
+    const t = setTimeout(() => setN((v) => v + 1), 480);
     return () => clearTimeout(t);
   }, [n]);
 
   const breached = DEMO_FEED.slice(0, n).filter((d) => d.verdict === "breached").length;
 
   return (
-    <div className="relative w-full max-w-2xl mx-auto glass-strong rounded-2xl overflow-hidden">
-      <div className="scanline" />
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-white/5">
-        <Radar className="w-4 h-4 text-violet animate-spin-slow" />
-        <span className="font-mono text-xs text-text-mid">gauntlet · live red-team</span>
-        <span className="ml-auto font-mono text-xs text-crimson">{breached} breached</span>
-      </div>
-      <div className="p-4 font-mono text-[13px] min-h-[260px]">
-        {DEMO_FEED.slice(0, n).map((d, i) => {
-          const s = verdictStyle[d.verdict];
-          return (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, x: -8 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="flex items-center gap-3 py-1"
-            >
-              <Crosshair className="w-3.5 h-3.5 shrink-0" style={{ color: s.c }} />
-              <span className="text-text-mid truncate">{d.name}</span>
-              <span
-                className="ml-auto text-[10px] tracking-widest px-2 py-0.5 rounded-full shrink-0"
-                style={{ color: s.c, background: `${s.c}1a`, border: `1px solid ${s.c}40` }}
+    <div className="relative">
+      <div className="relative glass-strong rounded-2xl overflow-hidden grain ticks">
+        <div className="scanline" />
+        <div className="flex items-center gap-2 px-4 py-3 border-b border-white/5">
+          <span className="w-2.5 h-2.5 rounded-full bg-crimson/80" />
+          <span className="w-2.5 h-2.5 rounded-full bg-warn/80" />
+          <span className="w-2.5 h-2.5 rounded-full bg-safe/80" />
+          <span className="ml-2 font-mono text-xs text-text-mid">gauntlet@redteam: ./run --target acme-supportbot</span>
+          <span className="ml-auto font-mono text-xs text-crimson">{breached} breached</span>
+        </div>
+        <div className="p-4 font-mono text-[13px] min-h-[280px]">
+          {DEMO_FEED.slice(0, n).map((d, i) => {
+            const s = verdictStyle[d.verdict];
+            return (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, x: -8 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="flex items-center gap-3 py-1"
               >
-                {s.label}
-              </span>
-            </motion.div>
-          );
-        })}
-        <span className="inline-block w-2 h-4 bg-crimson ml-1 align-middle animate-blink" />
+                <span className="text-text-lo">{String(i + 1).padStart(2, "0")}</span>
+                <Crosshair className="w-3.5 h-3.5 shrink-0" style={{ color: s.c }} />
+                <span className="text-text-mid truncate">{d.name}</span>
+                <span
+                  className="ml-auto text-[10px] tracking-widest px-2 py-0.5 rounded shrink-0"
+                  style={{ color: s.c, background: `${s.c}1a`, border: `1px solid ${s.c}40` }}
+                >
+                  {s.label}
+                </span>
+              </motion.div>
+            );
+          })}
+          <span className="inline-block w-2 h-4 bg-crimson ml-1 align-middle animate-blink" />
+        </div>
       </div>
+      {/* rubber stamp */}
+      <motion.div
+        initial={{ opacity: 0, scale: 1.4 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 1, type: "spring", stiffness: 200 }}
+        className="stamp text-crimson absolute -bottom-5 -right-4 text-lg bg-ink-0/40 backdrop-blur-sm"
+      >
+        Breached
+      </motion.div>
     </div>
   );
 }
 
 const CATEGORIES = [
-  { icon: ShieldAlert, title: "Instruction Override", desc: "“Ignore previous instructions…” and fake authority directives." },
-  { icon: Fingerprint, title: "System-Prompt Leak", desc: "Coax the agent into dumping its own hidden instructions." },
-  { icon: Skull, title: "Role-Play Jailbreak", desc: "DAN personas, fiction frames, and sympathy exploits." },
-  { icon: ScanLine, title: "Obfuscation", desc: "Base64, leetspeak, and whitespace token-smuggling." },
-  { icon: Bug, title: "Indirect Injection", desc: "Poisoned documents and spoofed tool results." },
-  { icon: Swords, title: "Refusal Suppression", desc: "Forbidding refusals and forcing affirmative prefixes." },
+  { icon: ShieldAlert, title: "Instruction Override", tag: "LLM01.A", desc: "“Ignore previous instructions” and fake authority directives." },
+  { icon: Fingerprint, title: "System-Prompt Leak", tag: "LLM01.B", desc: "Coax the agent into dumping its own hidden instructions." },
+  { icon: Skull, title: "Role-Play Jailbreak", tag: "LLM01.C", desc: "DAN personas, fiction frames, and sympathy exploits." },
+  { icon: ScanLine, title: "Obfuscation", tag: "LLM01.D", desc: "Base64, leetspeak, and whitespace token-smuggling." },
+  { icon: Bug, title: "Indirect Injection", tag: "LLM01.E", desc: "Poisoned documents and spoofed tool results." },
+  { icon: Swords, title: "Refusal Suppression", tag: "LLM01.F", desc: "Forbidding refusals and forcing affirmative prefixes." },
 ];
 
 const STEPS = [
-  { icon: KeyRound, title: "Plant a canary", desc: "Gauntlet hides a unique secret token inside your system prompt and tells the model to guard it — without weakening your own rules." },
+  { icon: KeyRound, title: "Plant a canary", desc: "Gauntlet hides a unique secret token inside your prompt and tells the model to guard it — without weakening your own rules." },
   { icon: Target, title: "Run the gauntlet", desc: "It fires a battery of real injection & jailbreak attacks at your prompt, live, one technique at a time." },
-  { icon: TriangleAlert, title: "Get the breach report", desc: "Any attack that leaks the canary is a deterministic breach. You get a hardening score and the exact transcript of everything that broke it." },
+  { icon: TriangleAlert, title: "Read the breach report", desc: "Any attack that leaks the canary is a deterministic breach. You get a hardening score and the exact transcript of everything that broke it." },
 ];
+
+const TICKER = ["INSTRUCTION OVERRIDE", "SYSTEM-PROMPT LEAK", "DAN PERSONA", "BASE64 SMUGGLING", "POISONED DOCUMENT", "SPOOFED TOOL RESULT", "REFUSAL SUPPRESSION", "SENTENCE COMPLETION", "CONFIG-AS-JSON", "TRANSLATION EXTRACTION"];
 
 export default function Landing() {
   return (
@@ -109,9 +124,10 @@ export default function Landing() {
       {/* NAV */}
       <nav className="fixed top-0 inset-x-0 z-50 glass">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 font-display text-xl font-extrabold tracking-tight">
+          <Link href="/" className="flex items-center gap-2.5">
             <Crosshair className="w-5 h-5 text-crimson" />
-            <span className="text-gradient">GAUNTLET</span>
+            <span className="font-display text-xl font-extrabold tracking-tight text-text-hi">GAUNTLET</span>
+            <span className="filelabel text-text-lo border border-white/10 rounded px-1.5 py-0.5">RED-TEAM · v0.1</span>
           </Link>
           <div className="flex items-center gap-3">
             <a href="https://github.com/venkat22022202/gauntlet" className="text-sm text-text-mid hover:text-text-hi transition-colors flex items-center gap-1.5">
@@ -125,65 +141,89 @@ export default function Landing() {
             </Link>
           </div>
         </div>
+        {/* attack ticker */}
+        <div className="border-t border-white/5 overflow-hidden">
+          <div className="flex whitespace-nowrap animate-marquee py-1.5">
+            {[...TICKER, ...TICKER].map((t, i) => (
+              <span key={i} className="filelabel text-text-lo mx-5 flex items-center gap-2">
+                <span className="w-1 h-1 rounded-full bg-crimson" /> {t}
+              </span>
+            ))}
+          </div>
+        </div>
       </nav>
 
-      {/* HERO */}
-      <section className="relative pt-36 pb-20 px-6">
-        <div className="max-w-5xl mx-auto text-center">
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-            <span className="inline-flex items-center gap-2 rounded-full glass px-4 py-1.5 text-xs font-medium text-violet-soft">
-              <Zap className="w-3.5 h-3.5" /> Open-source · OWASP LLM01 red-team · BYO-key
-            </span>
-          </motion.div>
+      {/* HERO — asymmetric */}
+      <section className="relative px-6 pt-36 pb-24">
+        <div className="max-w-7xl mx-auto grid lg:grid-cols-[1.05fr_0.95fr] gap-12 items-center">
+          <div>
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="filelabel text-crimson mb-6 flex items-center gap-3"
+            >
+              <span className="w-8 h-px bg-crimson" />
+              CASE FILE — OWASP LLM-01 · PROMPT INJECTION
+            </motion.div>
 
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="mt-8 font-display text-5xl md:text-7xl font-extrabold tracking-tight leading-[0.95]"
-          >
-            Is your AI agent
-            <br />
-            <span className="text-gradient">hackable?</span>
-          </motion.h1>
+            <motion.h1
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.05 }}
+              className="font-display text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[0.92] text-left"
+            >
+              Is your AI agent
+              <br />
+              <span className="text-gradient">hackable?</span>
+            </motion.h1>
 
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="mt-6 text-lg md:text-xl text-text-mid max-w-2xl mx-auto"
-          >
-            Paste your system prompt. Gauntlet runs it through a barrage of real
-            prompt-injection and jailbreak attacks and shows you, line by line,
-            exactly how it breaks.
-          </motion.p>
+            <motion.p
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.12 }}
+              className="mt-6 text-lg text-text-mid max-w-xl leading-relaxed"
+            >
+              Paste your system prompt. Gauntlet runs it through a barrage of real
+              prompt-injection and jailbreak attacks and shows you, line by line,
+              exactly how it breaks.
+            </motion.p>
+
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.18 }}
+              className="mt-9 flex items-center gap-6"
+            >
+              <Link
+                href="/scan"
+                className="group inline-flex items-center gap-2 rounded-xl bg-crimson px-7 py-3.5 text-base font-semibold text-white glow-crimson hover:bg-crimson-soft transition-all"
+              >
+                Run the gauntlet
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </Link>
+              <a href="#how" className="text-sm text-text-mid hover:text-text-hi transition-colors border-b border-white/15 pb-0.5">
+                how it works ↓
+              </a>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
+              className="mt-10 flex flex-wrap gap-x-5 gap-y-2 filelabel text-text-lo"
+            >
+              {["21 ATTACKS", "CANARY-VERIFIED", "BYO-KEY", "NO SIGN-UP", "OPEN-SOURCE"].map((s) => (
+                <span key={s} className="flex items-center gap-2">
+                  <span className="w-1 h-1 rounded-full bg-violet" /> {s}
+                </span>
+              ))}
+            </motion.div>
+          </div>
 
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4"
-          >
-            <Link
-              href="/scan"
-              className="group inline-flex items-center gap-2 rounded-xl bg-crimson px-8 py-3.5 text-base font-semibold text-white glow-crimson hover:bg-crimson-soft transition-all"
-            >
-              Run the gauntlet
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </Link>
-            <a
-              href="#how"
-              className="inline-flex items-center gap-2 rounded-xl glass glass-hover px-8 py-3.5 text-base font-medium text-text-mid"
-            >
-              <Radar className="w-4 h-4" /> How it works
-            </a>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.5 }}
-            className="mt-16"
+            transition={{ duration: 0.6, delay: 0.25 }}
           >
             <HeroConsole />
           </motion.div>
@@ -191,25 +231,24 @@ export default function Landing() {
       </section>
 
       {/* CATEGORIES */}
-      <section className="py-20 px-6">
+      <section className="py-16 px-6 border-t border-white/5">
         <div className="max-w-7xl mx-auto">
-          <h2 className="font-display text-3xl md:text-4xl font-bold text-center mb-3">
-            The attacks it throws at you
-          </h2>
-          <p className="text-center text-text-mid mb-12">
-            A curated corpus of real techniques — the same ones attackers use in the wild.
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="filelabel text-text-lo mb-2">// ARSENAL</div>
+          <h2 className="font-display text-3xl md:text-4xl font-bold mb-10">The attacks it throws at you</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-white/5 rounded-2xl overflow-hidden">
             {CATEGORIES.map((cat, i) => (
               <motion.div
                 key={cat.title}
-                initial={{ opacity: 0, y: 16 }}
-                whileInView={{ opacity: 1, y: 0 }}
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: i * 0.06 }}
-                className="glass glass-hover rounded-2xl p-6"
+                transition={{ duration: 0.4, delay: i * 0.05 }}
+                className="bg-ink-50 p-6 hover:bg-ink-100 transition-colors group"
               >
-                <cat.icon className="w-7 h-7 text-crimson mb-4" />
+                <div className="flex items-center justify-between mb-4">
+                  <cat.icon className="w-6 h-6 text-crimson group-hover:scale-110 transition-transform" />
+                  <span className="filelabel text-text-lo">{cat.tag}</span>
+                </div>
                 <h3 className="font-display text-lg font-semibold mb-1.5">{cat.title}</h3>
                 <p className="text-sm text-text-mid leading-relaxed">{cat.desc}</p>
               </motion.div>
@@ -221,10 +260,11 @@ export default function Landing() {
       {/* HOW */}
       <section id="how" className="py-20 px-6">
         <div className="max-w-4xl mx-auto">
-          <h2 className="font-display text-3xl md:text-4xl font-bold text-center mb-12">
+          <div className="filelabel text-text-lo mb-2">// PROTOCOL</div>
+          <h2 className="font-display text-3xl md:text-4xl font-bold mb-10">
             Three steps. <span className="text-gradient-violet">Total clarity.</span>
           </h2>
-          <div className="space-y-6">
+          <div className="space-y-px bg-white/5 rounded-2xl overflow-hidden">
             {STEPS.map((s, i) => (
               <motion.div
                 key={s.title}
@@ -232,13 +272,13 @@ export default function Landing() {
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.4, delay: i * 0.1 }}
-                className="glass rounded-2xl p-6 flex gap-5 items-start"
+                className="bg-ink-50 p-6 flex gap-5 items-start"
               >
-                <div className="shrink-0 w-12 h-12 rounded-xl glass-strong flex items-center justify-center">
+                <div className="shrink-0 font-display text-3xl font-extrabold text-text-lo w-12">0{i + 1}</div>
+                <div className="shrink-0 w-11 h-11 rounded-xl glass flex items-center justify-center">
                   <s.icon className="w-5 h-5 text-violet" />
                 </div>
                 <div>
-                  <div className="font-mono text-xs text-text-lo mb-1">0{i + 1}</div>
                   <h3 className="font-display text-lg font-semibold mb-1">{s.title}</h3>
                   <p className="text-text-mid leading-relaxed text-sm">{s.desc}</p>
                 </div>
@@ -251,14 +291,12 @@ export default function Landing() {
       {/* CTA */}
       <section className="py-20 px-6">
         <div className="max-w-3xl mx-auto">
-          <div className="relative glass-strong rounded-3xl p-12 text-center overflow-hidden">
+          <div className="relative glass-strong rounded-3xl p-12 text-center overflow-hidden grain ticks">
             <div className="scanline" />
             <Crosshair className="w-12 h-12 text-crimson mx-auto mb-6 animate-float" />
-            <h2 className="font-display text-3xl md:text-4xl font-bold mb-3">
-              Find out before an attacker does.
-            </h2>
+            <h2 className="font-display text-3xl md:text-4xl font-bold mb-3">Find out before an attacker does.</h2>
             <p className="text-text-mid mb-8 max-w-md mx-auto">
-              Free, open-source, and runs against your own key. No prompt or key is ever stored.
+              Free, open-source, no sign-up. Runs against your own key — no prompt or key is ever stored.
             </p>
             <Link
               href="/scan"
@@ -271,12 +309,12 @@ export default function Landing() {
       </section>
 
       <footer className="border-t border-white/5 py-8 px-6">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-text-lo">
-          <div className="font-mono">
-            <span className="text-crimson">GAUNTLET</span> — red-team your prompt. Authorized use only.
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 filelabel text-text-lo">
+          <div>
+            <span className="text-crimson">GAUNTLET</span> — RED-TEAM YOUR PROMPT · AUTHORIZED USE ONLY
           </div>
           <a href="https://github.com/venkat22022202/gauntlet" className="hover:text-text-hi transition-colors flex items-center gap-1.5">
-            <Github className="w-4 h-4" /> github.com/venkat22022202/gauntlet
+            <Github className="w-4 h-4" /> GITHUB.COM/VENKAT22022202/GAUNTLET
           </a>
         </div>
       </footer>
