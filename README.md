@@ -81,6 +81,68 @@ run the gauntlet.
 > used only for that request — it is never stored or logged. The Drizzle/Neon
 > schema in `src/server/db/` is optional and only powers the roadmap features below.
 
+## Testing your agent (OpenAI · Claude · Gemini · open-source · local)
+
+Gauntlet talks to any **OpenAI-compatible** `/chat/completions` endpoint, so one scanner
+covers every major provider. Pick a preset on `/scan`:
+
+| Provider | Endpoint | Example model | Key |
+|---|---|---|---|
+| OpenAI | `https://api.openai.com/v1` | `gpt-5.4-mini` | OpenAI key |
+| Claude (Anthropic OpenAI-compat) | `https://api.anthropic.com/v1` | `claude-sonnet-4-6` | Anthropic key |
+| Google Gemini (OpenAI-compat) | `https://generativelanguage.googleapis.com/v1beta/openai` | `gemini-3.5-flash` | Google AI Studio key |
+| OpenRouter (open-source) | `https://openrouter.ai/api/v1` | `meta-llama/llama-3.3-70b-instruct` | OpenRouter key |
+| Local (Ollama) | `http://localhost:11434/v1` | `llama3.3` | any string |
+
+### Testing a Google ADK / Gemini agent
+
+**Level 1 — prompt + model (works now):** choose the **Google Gemini** preset, paste your
+ADK agent's `instruction=...` system prompt, and use your Google AI Studio key. This
+red-teams the prompt + model layer, where prompt injection actually lands.
+
+**Level 2 — the full local/LAN agent (its tools + routing):** an ADK agent
+(`adk api_server`) exposes its own, non-OpenAI endpoint, and a **cloud-hosted Gauntlet
+cannot reach your `localhost`**. So run Gauntlet on the same machine/LAN and put a tiny
+OpenAI-compatible shim in front of the ADK runner, then point the endpoint at
+`http://localhost:PORT/v1`:
+
+```python
+# shim.py — expose your ADK agent as an OpenAI /chat/completions endpoint.
+# (Illustrative — adapt the runner calls to your installed ADK version.)
+from fastapi import FastAPI
+from pydantic import BaseModel
+from google.adk.runners import InMemoryRunner
+from google.genai import types
+from your_agent import root_agent          # your ADK agent
+
+app = FastAPI()
+runner = InMemoryRunner(agent=root_agent, app_name="maada")
+
+class Msg(BaseModel): role: str; content: str
+class Req(BaseModel):
+    model: str = "maada"
+    messages: list[Msg]
+
+@app.post("/v1/chat/completions")
+async def chat(req: Req):
+    user = next((m.content for m in reversed(req.messages) if m.role == "user"), "")
+    s = await runner.session_service.create_session(app_name="maada", user_id="gauntlet")
+    out = ""
+    async for ev in runner.run_async(
+        user_id="gauntlet", session_id=s.id,
+        new_message=types.Content(role="user", parts=[types.Part(text=user)]),
+    ):
+        if ev.content and ev.content.parts:
+            out += "".join(p.text or "" for p in ev.content.parts)
+    return {"choices": [{"index": 0, "message": {"role": "assistant", "content": out},
+            "finish_reason": "stop"}],
+            "usage": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}}
+# run:  uvicorn shim:app --host 0.0.0.0 --port 8080
+# Gauntlet endpoint:  http://localhost:8080/v1   (or http://<LAN-IP>:8080/v1 from another machine)
+```
+
+A built-in custom-agent adapter (no shim required) is on the roadmap.
+
 ## ⚠️ Authorized use only
 
 Gauntlet is a **defensive** tool: test systems **you own or are explicitly

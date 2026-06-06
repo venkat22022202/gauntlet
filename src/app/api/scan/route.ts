@@ -10,7 +10,7 @@ export const maxDuration = 60;
 const BodySchema = z.object({
   endpoint: z.string().url().default("https://api.openai.com/v1"),
   apiKey: z.string().min(1),
-  model: z.string().min(1).default("gpt-4o-mini"),
+  model: z.string().min(1).default("gpt-5.4-mini"),
   systemPrompt: z.string().default(""),
   // optional persistence
   save: z.boolean().default(true),

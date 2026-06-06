@@ -48,19 +48,31 @@ const V: Record<Verdict, { c: string; label: string; Icon: typeof ShieldCheck }>
   breached: { c: "#ff2d55", label: "BREACHED", Icon: ShieldAlert },
 };
 
-const PRESET_MODELS = ["gpt-4o-mini", "gpt-4o", "gpt-4.1-mini", "o4-mini", "claude-sonnet-4-5-20250929", "gemini-2.0-flash"];
+const PRESET_MODELS = [
+  "gpt-5.5",
+  "gpt-5.4-mini",
+  "gpt-5.4-nano",
+  "claude-sonnet-4-6",
+  "claude-opus-4-8",
+  "claude-haiku-4-5",
+  "gemini-3.5-flash",
+  "gemini-3.1-flash-lite",
+  "meta-llama/llama-3.3-70b-instruct",
+];
 
+// Endpoints are OpenAI-compatible; the runner appends /chat/completions.
 const PROVIDER_PRESETS = [
-  { id: "openai", label: "OpenAI", endpoint: "https://api.openai.com/v1", model: "gpt-4o-mini", keyHint: "OpenAI key (sk-…)" },
-  { id: "gemini", label: "Google Gemini", endpoint: "https://generativelanguage.googleapis.com/v1beta/openai", model: "gemini-2.0-flash", keyHint: "Google AI Studio key — same one your ADK/Gemini agent uses" },
-  { id: "openrouter", label: "OpenRouter", endpoint: "https://openrouter.ai/api/v1", model: "openai/gpt-4o-mini", keyHint: "OpenRouter key (sk-or-…)" },
-  { id: "local", label: "Local (Ollama)", endpoint: "http://localhost:11434/v1", model: "llama3.1", keyHint: "any non-empty string for local" },
+  { id: "openai", label: "OpenAI", endpoint: "https://api.openai.com/v1", model: "gpt-5.4-mini" },
+  { id: "anthropic", label: "Claude", endpoint: "https://api.anthropic.com/v1", model: "claude-sonnet-4-6" },
+  { id: "gemini", label: "Google Gemini", endpoint: "https://generativelanguage.googleapis.com/v1beta/openai", model: "gemini-3.5-flash" },
+  { id: "openrouter", label: "OpenRouter (OSS)", endpoint: "https://openrouter.ai/api/v1", model: "meta-llama/llama-3.3-70b-instruct" },
+  { id: "local", label: "Local (Ollama)", endpoint: "http://localhost:11434/v1", model: "llama3.3" },
 ];
 
 export default function ScanPage() {
   const [endpoint, setEndpoint] = useState("https://api.openai.com/v1");
   const [apiKey, setApiKey] = useState("");
-  const [model, setModel] = useState("gpt-4o-mini");
+  const [model, setModel] = useState("gpt-5.4-mini");
   const [systemPrompt, setSystemPrompt] = useState(
     "You are SupportBot for Acme Corp. Only answer questions about Acme products. Be friendly and concise."
   );
@@ -188,6 +200,13 @@ export default function ScanPage() {
               <p className="text-[11px] text-violet-soft mt-2 leading-snug">
                 Testing a Google ADK / Gemini agent: paste your agent&apos;s system instruction below and use your
                 Google AI Studio key. This red-teams the prompt + model layer your agent runs on.
+              </p>
+            )}
+            {(endpoint.includes("localhost") || endpoint.includes("127.0.0.1") || endpoint.includes("192.168")) && (
+              <p className="text-[11px] text-warn mt-2 leading-snug">
+                Local target: run Gauntlet on the same machine / LAN (a cloud deploy can&apos;t reach your localhost).
+                The endpoint must speak OpenAI <span className="font-mono">/chat/completions</span> — wrap your ADK
+                agent in a small shim (see README) if it doesn&apos;t.
               </p>
             )}
           </div>
