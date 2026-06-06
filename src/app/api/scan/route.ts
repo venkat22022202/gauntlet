@@ -5,7 +5,7 @@ import { scoreFromResults, type Verdict } from "@/lib/judge";
 import { saveScan } from "@/server/persistence";
 
 export const runtime = "nodejs";
-export const maxDuration = 300;
+export const maxDuration = 60;
 
 const BodySchema = z.object({
   endpoint: z.string().url().default("https://api.openai.com/v1"),
