@@ -1,0 +1,195 @@
+@import "tailwindcss";
+
+/* ============================================================
+   GAUNTLET — "Crucible" theme
+   Glassmorphism · crimson/violet aurora · red-team energy.
+   Deliberately NOT BlackVault: no flat void, no neon-green.
+   ============================================================ */
+
+@theme inline {
+  --color-ink-0: #060508;
+  --color-ink-50: #0b0910;
+  --color-ink-100: #110d18;
+  --color-ink-200: #181221;
+  --color-ink-300: #221a30;
+
+  /* danger / red-team primary */
+  --color-crimson: #ff2d55;
+  --color-crimson-soft: #ff5d7a;
+  /* electric violet */
+  --color-violet: #a855f7;
+  --color-violet-soft: #c98bff;
+  /* hot magenta accent */
+  --color-magenta: #ec4899;
+  /* signal colors */
+  --color-safe: #22c55e;
+  --color-warn: #f5a524;
+
+  --color-text-hi: #f7f5fb;
+  --color-text-mid: #b3aec4;
+  --color-text-lo: #6b6680;
+
+  --font-display: var(--font-sora);
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-jetbrains);
+}
+
+* {
+  border-color: rgba(255, 255, 255, 0.07);
+}
+
+html {
+  scroll-behavior: smooth;
+  color-scheme: dark;
+}
+
+body {
+  background: var(--color-ink-0);
+  color: var(--color-text-hi);
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  position: relative;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ---- Aurora mesh background (the "crazy" part) ---- */
+body::before {
+  content: "";
+  position: fixed;
+  inset: -20%;
+  z-index: -2;
+  background:
+    radial-gradient(40% 35% at 18% 12%, rgba(255, 45, 85, 0.22), transparent 60%),
+    radial-gradient(45% 40% at 85% 18%, rgba(168, 85, 247, 0.20), transparent 62%),
+    radial-gradient(50% 45% at 70% 85%, rgba(236, 72, 153, 0.16), transparent 60%),
+    radial-gradient(40% 40% at 12% 80%, rgba(124, 58, 237, 0.16), transparent 60%);
+  filter: blur(20px) saturate(120%);
+  animation: aurora-drift 22s ease-in-out infinite alternate;
+}
+
+/* fine noise + grid overlay for texture */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, black 30%, transparent 75%);
+}
+
+@keyframes aurora-drift {
+  0%   { transform: translate3d(0, 0, 0) scale(1); }
+  50%  { transform: translate3d(2%, -1.5%, 0) scale(1.06); }
+  100% { transform: translate3d(-1.5%, 2%, 0) scale(1.04); }
+}
+
+/* ---- Scrollbar ---- */
+::-webkit-scrollbar { width: 7px; height: 7px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(168, 85, 247, 0.35); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255, 45, 85, 0.55); }
+
+::selection { background: rgba(255, 45, 85, 0.30); color: #fff; }
+
+/* ============================================================
+   GLASS PRIMITIVES
+   ============================================================ */
+.glass {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.06),
+    rgba(255, 255, 255, 0.02)
+  );
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.08),
+    0 20px 60px -25px rgba(0, 0, 0, 0.8);
+}
+
+.glass-strong {
+  background: linear-gradient(
+    180deg,
+    rgba(20, 14, 28, 0.72),
+    rgba(12, 9, 18, 0.6)
+  );
+  backdrop-filter: blur(28px) saturate(150%);
+  -webkit-backdrop-filter: blur(28px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.07),
+    0 30px 80px -30px rgba(0, 0, 0, 0.9);
+}
+
+.glass-hover { transition: border-color .25s ease, transform .25s ease, box-shadow .25s ease; }
+.glass-hover:hover {
+  border-color: rgba(255, 45, 85, 0.35);
+  transform: translateY(-2px);
+  box-shadow: 0 24px 70px -28px rgba(255, 45, 85, 0.35);
+}
+
+/* ---- Glow utilities ---- */
+.glow-crimson { box-shadow: 0 0 28px -4px rgba(255, 45, 85, 0.55); }
+.glow-violet  { box-shadow: 0 0 28px -4px rgba(168, 85, 247, 0.55); }
+.glow-safe    { box-shadow: 0 0 22px -6px rgba(34, 197, 94, 0.5); }
+
+.text-gradient {
+  background: linear-gradient(110deg, #ff2d55 0%, #ec4899 40%, #a855f7 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.text-gradient-violet {
+  background: linear-gradient(110deg, #c98bff, #a855f7 60%, #7c3aed);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* divider line with gradient */
+.hairline {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.14), transparent);
+}
+
+/* ============================================================
+   ANIMATIONS
+   ============================================================ */
+@keyframes pulse-ring {
+  0%   { box-shadow: 0 0 0 0 rgba(255, 45, 85, 0.5); }
+  70%  { box-shadow: 0 0 0 16px rgba(255, 45, 85, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 45, 85, 0); }
+}
+.animate-pulse-ring { animation: pulse-ring 2s infinite; }
+
+@keyframes scanline {
+  0%   { transform: translateY(-100%); opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { transform: translateY(1200%); opacity: 0; }
+}
+.scanline {
+  position: absolute;
+  left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(255,45,85,0.9), transparent);
+  animation: scanline 2.4s linear infinite;
+}
+
+@keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.15; } }
+.animate-blink { animation: blink 1s step-end infinite; }
+
+@keyframes spin-slow { to { transform: rotate(360deg); } }
+.animate-spin-slow { animation: spin-slow 8s linear infinite; }
+
+@keyframes float-y {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.animate-float { animation: float-y 4s ease-in-out infinite; }

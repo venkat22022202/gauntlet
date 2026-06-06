@@ -1,0 +1,367 @@
+"use client";
+
+import Link from "next/link";
+import { useState, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
+import {
+  Crosshair,
+  Radar,
+  Play,
+  ShieldCheck,
+  ShieldAlert,
+  TriangleAlert,
+  ChevronDown,
+  KeyRound,
+  ServerCog,
+  ArrowLeft,
+  Eye,
+  EyeOff,
+} from "lucide-react";
+import { ScoreRing } from "@/components/score-ring";
+
+type Verdict = "blocked" | "breached" | "partial";
+
+interface Outcome {
+  attackId: string;
+  name: string;
+  category: string;
+  severity: string;
+  technique: string;
+  verdict: Verdict;
+  reasons: string[];
+  prompt: string;
+  response: string;
+}
+
+interface Summary {
+  score: number;
+  breached: number;
+  partial: number;
+  blocked: number;
+  scanId?: string | null;
+}
+
+const V: Record<Verdict, { c: string; label: string; Icon: typeof ShieldCheck }> = {
+  blocked: { c: "#22c55e", label: "BLOCKED", Icon: ShieldCheck },
+  partial: { c: "#f5a524", label: "PARTIAL", Icon: TriangleAlert },
+  breached: { c: "#ff2d55", label: "BREACHED", Icon: ShieldAlert },
+};
+
+const PRESET_MODELS = ["gpt-4o-mini", "gpt-4o", "gpt-4.1-mini", "o4-mini", "claude-sonnet-4-5-20250929", "gemini-2.0-flash"];
+
+export default function ScanPage() {
+  const [endpoint, setEndpoint] = useState("https://api.openai.com/v1");
+  const [apiKey, setApiKey] = useState("");
+  const [model, setModel] = useState("gpt-4o-mini");
+  const [systemPrompt, setSystemPrompt] = useState(
+    "You are SupportBot for Acme Corp. Only answer questions about Acme products. Be friendly and concise."
+  );
+  const [showKey, setShowKey] = useState(false);
+  const [makePublic, setMakePublic] = useState(false);
+  const [agentName, setAgentName] = useState("");
+  const [running, setRunning] = useState(false);
+  const [total, setTotal] = useState(0);
+  const [results, setResults] = useState<Outcome[]>([]);
+  const [summary, setSummary] = useState<Summary | null>(null);
+  const [openRow, setOpenRow] = useState<string | null>(null);
+  const consoleRef = useRef<HTMLDivElement>(null);
+
+  async function runScan() {
+    if (!apiKey.trim()) {
+      toast.error("Add an API key for the endpoint you want to test.");
+      return;
+    }
+    setRunning(true);
+    setResults([]);
+    setSummary(null);
+    setTotal(0);
+    setOpenRow(null);
+
+    try {
+      const res = await fetch("/api/scan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          endpoint,
+          apiKey,
+          model,
+          systemPrompt,
+          makePublic,
+          agentName: makePublic ? agentName : undefined,
+        }),
+      });
+
+      if (!res.ok || !res.body) {
+        const err = await res.json().catch(() => ({ message: `HTTP ${res.status}` }));
+        throw new Error(err.message ?? `HTTP ${res.status}`);
+      }
+
+      const reader = res.body.getReader();
+      const dec = new TextDecoder();
+      let buf = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += dec.decode(value, { stream: true });
+        let idx: number;
+        while ((idx = buf.indexOf("\n")) >= 0) {
+          const line = buf.slice(0, idx).trim();
+          buf = buf.slice(idx + 1);
+          if (!line) continue;
+          const evt = JSON.parse(line);
+          if (evt.type === "meta") {
+            setTotal(evt.total);
+          } else if (evt.type === "result") {
+            setResults((r) => [...r, evt.outcome]);
+            requestAnimationFrame(() => {
+              consoleRef.current?.scrollTo({ top: consoleRef.current.scrollHeight, behavior: "smooth" });
+            });
+          } else if (evt.type === "done") {
+            setSummary({ score: evt.score, breached: evt.breached, partial: evt.partial, blocked: evt.blocked, scanId: evt.scanId });
+          } else if (evt.type === "error") {
+            throw new Error(evt.message);
+          }
+        }
+      }
+    } catch (err) {
+      toast.error((err as Error).message || "Scan failed");
+    } finally {
+      setRunning(false);
+    }
+  }
+
+  const progress = total ? Math.round((results.length / total) * 100) : 0;
+
+  return (
+    <div className="min-h-screen">
+      <nav className="fixed top-0 inset-x-0 z-50 glass">
+        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2 font-display text-xl font-extrabold">
+            <Crosshair className="w-5 h-5 text-crimson" />
+            <span className="text-gradient">GAUNTLET</span>
+          </Link>
+          <Link href="/" className="text-sm text-text-mid hover:text-text-hi flex items-center gap-1.5">
+            <ArrowLeft className="w-4 h-4" /> Home
+          </Link>
+        </div>
+      </nav>
+
+      <div className="max-w-7xl mx-auto px-6 pt-28 pb-20 grid lg:grid-cols-[400px_1fr] gap-6">
+        {/* CONFIG */}
+        <div className="glass-strong rounded-2xl p-6 h-fit lg:sticky lg:top-24">
+          <h1 className="font-display text-xl font-bold mb-1 flex items-center gap-2">
+            <ServerCog className="w-5 h-5 text-violet" /> Target
+          </h1>
+          <p className="text-xs text-text-lo mb-5">
+            Test only a system you own or are authorized to test.
+          </p>
+
+          <label className="block text-xs font-mono text-text-mid mb-1.5">ENDPOINT (OpenAI-compatible)</label>
+          <input
+            value={endpoint}
+            onChange={(e) => setEndpoint(e.target.value)}
+            className="w-full glass rounded-lg px-3 py-2 text-sm font-mono mb-4 outline-none focus:border-violet/50"
+          />
+
+          <label className="block text-xs font-mono text-text-mid mb-1.5 flex items-center gap-1.5">
+            <KeyRound className="w-3.5 h-3.5" /> API KEY (used only for this scan, never stored)
+          </label>
+          <div className="relative mb-4">
+            <input
+              type={showKey ? "text" : "password"}
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              placeholder="sk-..."
+              className="w-full glass rounded-lg px-3 py-2 pr-10 text-sm font-mono outline-none focus:border-violet/50"
+            />
+            <button
+              onClick={() => setShowKey((s) => !s)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-text-lo hover:text-text-hi"
+              type="button"
+            >
+              {showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          </div>
+
+          <label className="block text-xs font-mono text-text-mid mb-1.5">MODEL</label>
+          <input
+            value={model}
+            onChange={(e) => setModel(e.target.value)}
+            list="models"
+            className="w-full glass rounded-lg px-3 py-2 text-sm font-mono mb-4 outline-none focus:border-violet/50"
+          />
+          <datalist id="models">
+            {PRESET_MODELS.map((m) => (
+              <option key={m} value={m} />
+            ))}
+          </datalist>
+
+          <label className="block text-xs font-mono text-text-mid mb-1.5">SYSTEM PROMPT (the thing under test)</label>
+          <textarea
+            value={systemPrompt}
+            onChange={(e) => setSystemPrompt(e.target.value)}
+            rows={7}
+            className="w-full glass rounded-lg px-3 py-2 text-sm font-mono mb-5 outline-none focus:border-violet/50 resize-y"
+          />
+
+          <label className="flex items-center gap-2 mb-3 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={makePublic}
+              onChange={(e) => setMakePublic(e.target.checked)}
+              className="accent-crimson"
+            />
+            <span className="text-xs text-text-mid">Publish to the public leaderboard</span>
+          </label>
+          {makePublic && (
+            <input
+              value={agentName}
+              onChange={(e) => setAgentName(e.target.value)}
+              placeholder="Agent name (shown publicly)"
+              className="w-full glass rounded-lg px-3 py-2 text-sm font-mono mb-4 outline-none focus:border-violet/50"
+            />
+          )}
+
+          <button
+            onClick={runScan}
+            disabled={running}
+            className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-crimson px-4 py-3 font-semibold text-white glow-crimson hover:bg-crimson-soft transition-all disabled:opacity-60"
+          >
+            {running ? <Radar className="w-4 h-4 animate-spin-slow" /> : <Play className="w-4 h-4" />}
+            {running ? `Running… ${results.length}/${total}` : "Run the gauntlet"}
+          </button>
+        </div>
+
+        {/* CONSOLE / REPORT */}
+        <div className="space-y-6">
+          {summary && (
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="glass-strong rounded-2xl p-6 flex flex-col md:flex-row items-center gap-8"
+            >
+              <ScoreRing score={summary.score} />
+              <div className="flex-1 w-full">
+                <h2 className="font-display text-xl font-bold mb-4">Breach report</h2>
+                <div className="grid grid-cols-3 gap-3">
+                  {([
+                    ["breached", summary.breached],
+                    ["partial", summary.partial],
+                    ["blocked", summary.blocked],
+                  ] as const).map(([k, v]) => {
+                    const s = V[k as Verdict];
+                    return (
+                      <div key={k} className="glass rounded-xl p-4 text-center">
+                        <div className="font-display text-3xl font-extrabold" style={{ color: s.c }}>
+                          {v}
+                        </div>
+                        <div className="text-[10px] tracking-widest font-mono mt-1" style={{ color: s.c }}>
+                          {s.label}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <p className="text-sm text-text-mid mt-4">
+                  {summary.breached > 0
+                    ? `${summary.breached} attack${summary.breached > 1 ? "s" : ""} leaked the planted canary. Expand any breached row to see exactly what broke it.`
+                    : "No attack leaked the canary. Strong — but keep testing as you change the prompt."}
+                </p>
+                {summary.scanId && (
+                  <Link
+                    href={`/report/${summary.scanId}`}
+                    className="inline-flex items-center gap-1.5 mt-3 text-sm text-violet-soft hover:text-violet font-mono"
+                  >
+                    Shareable report → /report/{summary.scanId.slice(0, 8)}
+                  </Link>
+                )}
+              </div>
+            </motion.div>
+          )}
+
+          <div className="glass-strong rounded-2xl overflow-hidden">
+            <div className="flex items-center gap-2 px-5 py-3 border-b border-white/5">
+              <Radar className={`w-4 h-4 text-violet ${running ? "animate-spin-slow" : ""}`} />
+              <span className="font-mono text-xs text-text-mid">live attack console</span>
+              {total > 0 && (
+                <div className="ml-auto flex items-center gap-2">
+                  <div className="w-32 h-1.5 rounded-full bg-white/8 overflow-hidden">
+                    <div className="h-full bg-crimson transition-all" style={{ width: `${progress}%` }} />
+                  </div>
+                  <span className="font-mono text-xs text-text-lo">{progress}%</span>
+                </div>
+              )}
+            </div>
+
+            <div ref={consoleRef} className="max-h-[60vh] overflow-y-auto p-3">
+              {results.length === 0 && !running && (
+                <div className="text-center py-16 text-text-lo">
+                  <Crosshair className="w-10 h-10 mx-auto mb-3 opacity-40" />
+                  <p className="font-mono text-sm">Configure a target and run the gauntlet.</p>
+                </div>
+              )}
+              <AnimatePresence initial={false}>
+                {results.map((o) => {
+                  const s = V[o.verdict];
+                  const open = openRow === o.attackId;
+                  return (
+                    <motion.div
+                      key={o.attackId}
+                      initial={{ opacity: 0, x: -8 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      className="rounded-xl mb-1.5 glass glass-hover"
+                    >
+                      <button
+                        onClick={() => setOpenRow(open ? null : o.attackId)}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-left"
+                      >
+                        <s.Icon className="w-4 h-4 shrink-0" style={{ color: s.c }} />
+                        <div className="min-w-0">
+                          <div className="text-sm font-medium truncate">{o.name}</div>
+                          <div className="text-[11px] text-text-lo font-mono truncate">{o.technique}</div>
+                        </div>
+                        <span
+                          className="ml-auto text-[10px] tracking-widest px-2 py-0.5 rounded-full shrink-0 font-mono"
+                          style={{ color: s.c, background: `${s.c}1a`, border: `1px solid ${s.c}40` }}
+                        >
+                          {s.label}
+                        </span>
+                        <ChevronDown className={`w-4 h-4 text-text-lo shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
+                      </button>
+                      <AnimatePresence>
+                        {open && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="px-4 pb-4 space-y-3">
+                              <div>
+                                <div className="text-[10px] font-mono text-text-lo mb-1">ATTACK SENT</div>
+                                <pre className="text-xs font-mono text-text-mid whitespace-pre-wrap glass rounded-lg p-3">{o.prompt}</pre>
+                              </div>
+                              <div>
+                                <div className="text-[10px] font-mono text-text-lo mb-1">MODEL RESPONSE</div>
+                                <pre className="text-xs font-mono whitespace-pre-wrap glass rounded-lg p-3" style={{ color: o.verdict === "breached" ? "#ff8aa0" : undefined }}>{o.response || "(empty)"}</pre>
+                              </div>
+                              <div className="text-xs" style={{ color: s.c }}>
+                                {o.reasons.join(" ")}
+                              </div>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
