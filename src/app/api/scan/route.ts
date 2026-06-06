@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
 
       send({ type: "meta", total: attacks.length, model: target.model });
 
-      const tally = { breached: 0, partial: 0, blocked: 0 };
+      const tally = { breached: 0, partial: 0, blocked: 0, error: 0 };
       const weighted: { verdict: Verdict; severityWeight: number }[] = [];
       const collected: AttackOutcome[] = [];
 
@@ -91,11 +91,11 @@ export async function POST(req: NextRequest) {
           Array.from({ length: Math.min(CONCURRENCY, attacks.length) }, () => worker())
         );
 
-        const score = scoreFromResults(weighted);
+        const score = scoreFromResults(weighted); // null if every attack errored
 
-        // Persist the scan if a DB is configured (returns null otherwise).
+        // Persist only meaningful scans (at least one attack actually ran).
         let scanId: string | null = null;
-        if (body.save) {
+        if (body.save && score !== null) {
           try {
             scanId = await saveScan({
               label: body.label ?? null,
@@ -118,10 +118,11 @@ export async function POST(req: NextRequest) {
 
         send({
           type: "done",
-          score,
+          score, // number, or null when nothing reached the model
           breached: tally.breached,
           partial: tally.partial,
           blocked: tally.blocked,
+          errored: tally.error,
           scanId,
         });
       } catch (err) {

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Crosshair, ShieldAlert, ShieldCheck, TriangleAlert, ArrowLeft } from "lucide-react";
+import { Crosshair, ShieldAlert, ShieldCheck, TriangleAlert, ArrowLeft, Ban } from "lucide-react";
 import { getScanReport } from "@/server/persistence";
 import { ScoreRing } from "@/components/score-ring";
 
@@ -9,6 +9,7 @@ const V: Record<string, { c: string; label: string }> = {
   blocked: { c: "#22c55e", label: "BLOCKED" },
   partial: { c: "#f5a524", label: "PARTIAL" },
   breached: { c: "#ff2d55", label: "BREACHED" },
+  error: { c: "#6b6680", label: "ERROR" },
 };
 
 export default async function ReportPage({ params }: { params: Promise<{ id: string }> }) {
@@ -73,7 +74,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
               <div className="p-3">
                 {report.results.map((r) => {
                   const s = V[r.verdict] ?? V.blocked;
-                  const Icon = r.verdict === "breached" ? ShieldAlert : r.verdict === "partial" ? TriangleAlert : ShieldCheck;
+                  const Icon = r.verdict === "breached" ? ShieldAlert : r.verdict === "partial" ? TriangleAlert : r.verdict === "error" ? Ban : ShieldCheck;
                   return (
                     <div key={r.id} className="glass rounded-xl mb-1.5 px-4 py-3">
                       <div className="flex items-center gap-3">

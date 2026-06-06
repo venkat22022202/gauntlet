@@ -97,8 +97,8 @@ export async function runOneAttack(
     reasons = j.reasons;
   } catch (err) {
     response = "";
-    verdict = "blocked";
-    reasons = [`Attack errored (counted as blocked): ${(err as Error).message}`];
+    verdict = "error";
+    reasons = [`Attack never reached the model: ${(err as Error).message}`];
   }
   return {
     attackId: attack.id,

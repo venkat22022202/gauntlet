@@ -18,10 +18,11 @@ import {
   Eye,
   EyeOff,
   RefreshCw,
+  Ban,
 } from "lucide-react";
 import { ScoreRing } from "@/components/score-ring";
 
-type Verdict = "blocked" | "breached" | "partial";
+type Verdict = "blocked" | "breached" | "partial" | "error";
 
 interface Outcome {
   attackId: string;
@@ -36,10 +37,11 @@ interface Outcome {
 }
 
 interface Summary {
-  score: number;
+  score: number | null; // null = every attack errored (no meaningful score)
   breached: number;
   partial: number;
   blocked: number;
+  errored?: number;
   scanId?: string | null;
 }
 
@@ -47,6 +49,7 @@ const V: Record<Verdict, { c: string; label: string; Icon: typeof ShieldCheck }>
   blocked: { c: "#22c55e", label: "BLOCKED", Icon: ShieldCheck },
   partial: { c: "#f5a524", label: "PARTIAL", Icon: TriangleAlert },
   breached: { c: "#ff2d55", label: "BREACHED", Icon: ShieldAlert },
+  error: { c: "#6b6680", label: "ERROR", Icon: Ban },
 };
 
 const PRESET_MODELS = [
@@ -141,7 +144,7 @@ export default function ScanPage() {
               consoleRef.current?.scrollTo({ top: consoleRef.current.scrollHeight, behavior: "smooth" });
             });
           } else if (evt.type === "done") {
-            setSummary({ score: evt.score, breached: evt.breached, partial: evt.partial, blocked: evt.blocked, scanId: evt.scanId });
+            setSummary({ score: evt.score, breached: evt.breached, partial: evt.partial, blocked: evt.blocked, errored: evt.errored, scanId: evt.scanId });
           } else if (evt.type === "error") {
             throw new Error(evt.message);
           }
@@ -327,7 +330,27 @@ export default function ScanPage() {
 
         {/* CONSOLE / REPORT */}
         <div className="space-y-6">
-          {summary && (
+          {summary && summary.score === null && (
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="glass-strong rounded-2xl p-6 border border-warn/30"
+            >
+              <div className="flex items-center gap-3 mb-2">
+                <Ban className="w-6 h-6 text-warn" />
+                <h2 className="font-display text-xl font-bold">Scan didn&apos;t reach the model</h2>
+              </div>
+              <p className="text-sm text-text-mid leading-relaxed">
+                All {summary.errored ?? results.length} attacks <span className="text-warn">errored</span> before
+                hitting the model — so there is no score to give (a 100 here would be a lie). This is almost always a
+                wrong <span className="font-mono">MODEL</span> id or key. <strong>Click any row below</strong> to see
+                the exact provider error, then fix the model (try <span className="font-mono">load all models</span> to
+                pick a valid id) or the key, and re-run.
+              </p>
+            </motion.div>
+          )}
+
+          {summary && summary.score !== null && (
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
@@ -355,10 +378,16 @@ export default function ScanPage() {
                     );
                   })}
                 </div>
+                {summary.errored ? (
+                  <p className="text-xs text-warn mt-3 flex items-center gap-1.5">
+                    <Ban className="w-3.5 h-3.5 shrink-0" />
+                    {summary.errored} attack{summary.errored > 1 ? "s" : ""} errored and {summary.errored > 1 ? "were" : "was"} excluded from the score — expand to see why.
+                  </p>
+                ) : null}
                 <p className="text-sm text-text-mid mt-4">
                   {summary.breached > 0
                     ? `${summary.breached} attack${summary.breached > 1 ? "s" : ""} leaked the planted canary. Expand any breached row to see exactly what broke it.`
-                    : "No attack leaked the canary. Strong — but keep testing as you change the prompt."}
+                    : `No attack leaked the canary across the ${summary.blocked + summary.partial} that ran.${summary.errored ? "" : " Strong — keep testing as you change the prompt."}`}
                 </p>
                 {summary.scanId && (
                   <Link
