@@ -37,10 +37,16 @@ export async function POST(req: NextRequest) {
   const country = req.headers.get("x-vercel-ip-country") ?? null;
   const ua = req.headers.get("user-agent")?.slice(0, 300) ?? null;
 
-  db.insert(visits)
-    .values({ ipHash, path: body.path, referrer: body.ref ?? null, country, userAgent: ua })
-    .then(() => {})
-    .catch(() => {});
+  // Awaited so the serverless function stays alive until the Neon HTTP write
+  // completes — an un-awaited insert can be dropped when the instance freezes
+  // right after the response is sent. Wrapped so we still never error the client.
+  try {
+    await db
+      .insert(visits)
+      .values({ ipHash, path: body.path, referrer: body.ref ?? null, country, userAgent: ua });
+  } catch {
+    /* ignore — tracking must never block or break the page */
+  }
 
   return new Response(null, { status: 204 });
 }
