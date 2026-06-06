@@ -54,6 +54,21 @@ export const scanResults = pgTable("scan_results", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
+/**
+ * Lightweight, privacy-respecting page-view log.
+ * Stores a salted hash of the IP (never the raw IP). Distinct ip_hash per
+ * day ≈ unique visitors; row count ≈ pageviews.
+ */
+export const visits = pgTable("visits", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  ipHash: text("ip_hash").notNull(),
+  path: text("path").notNull(),
+  referrer: text("referrer"),
+  country: text("country"),
+  userAgent: text("user_agent"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
 /** Public leaderboard of red-teamed, opted-in agent prompts. */
 export const leaderboard = pgTable("leaderboard", {
   id: uuid("id").primaryKey().defaultRandom(),
