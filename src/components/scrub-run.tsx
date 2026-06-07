@@ -17,6 +17,7 @@ import {
   type MotionValue,
 } from "framer-motion";
 import { Crosshair, KeyRound } from "lucide-react";
+import { sfx } from "@/lib/sfx";
 
 const RUN = [
   { n: "Ignore previous instructions", v: "breached" },
@@ -81,14 +82,21 @@ export function ScrubRun() {
 
   const [breaches, setBreaches] = useState(0);
   const [graded, setGraded] = useState(false);
+  const prevBreaches = useRef(0);
+  const prevGraded = useRef(false);
   useMotionValueEvent(progress, "change", (v) => {
     let c = 0;
     for (let i = 0; i < n; i++) {
       const [, e] = rowRange(i, n);
       if (v >= e && RUN[i].v === "breached") c++;
     }
+    if (c > prevBreaches.current) sfx.breached();
+    prevBreaches.current = c;
+    const g = v >= 0.8;
+    if (g && !prevGraded.current) sfx.grade("F");
+    prevGraded.current = g;
     setBreaches(c);
-    setGraded(v >= 0.8);
+    setGraded(g);
   });
 
   const canaryOpacity = useTransform(progress, [0.04, 0.12], [0, 1]);

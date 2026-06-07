@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { GAME_LEVELS } from "@/lib/demo-agents";
 import { ScrambleText } from "@/components/fx";
+import { sfx } from "@/lib/sfx";
 
 interface BreakResult {
   won: boolean;
@@ -43,6 +44,7 @@ export default function BreakPage() {
     }
     setBusy(true);
     setResult(null);
+    sfx.tick();
     try {
       const res = await fetch("/api/break", {
         method: "POST",
@@ -56,6 +58,9 @@ export default function BreakPage() {
       if (data.won) {
         setCleared((c) => (c.includes(level) ? c : [...c, level]));
         toast.success(`BREACHED — you cracked ${data.levelName}`);
+        sfx.win();
+      } else {
+        sfx.lose();
       }
     } catch (e) {
       toast.error((e as Error).message || "Attack failed");

@@ -26,6 +26,7 @@ import {
 import { GradeBadge } from "@/components/grade-badge";
 import { gradeFromScore, brutalVerdict, killingBlow } from "@/lib/grade";
 import { ScrambleText, Tilt } from "@/components/fx";
+import { sfx } from "@/lib/sfx";
 
 type Verdict = "blocked" | "breached" | "partial" | "error";
 
@@ -145,11 +146,13 @@ export default function ScanPage() {
           setTotal(evt.total);
         } else if (evt.type === "result") {
           setResults((r) => [...r, evt.outcome]);
+          sfx.verdict(evt.outcome.verdict);
           requestAnimationFrame(() => {
             consoleRef.current?.scrollTo({ top: consoleRef.current.scrollHeight, behavior: "smooth" });
           });
         } else if (evt.type === "done") {
           setSummary({ score: evt.score, breached: evt.breached, partial: evt.partial, blocked: evt.blocked, errored: evt.errored, scanId: evt.scanId });
+          if (evt.score !== null) sfx.grade(gradeFromScore(evt.score).letter);
         } else if (evt.type === "error") {
           throw new Error(evt.message);
         }

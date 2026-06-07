@@ -3,6 +3,7 @@ import { Sora, Inter, JetBrains_Mono } from "next/font/google";
 import { Toaster } from "sonner";
 import { VisitTracker } from "@/components/visit-tracker";
 import { CommandPalette } from "@/components/command-palette";
+import { SoundToggle } from "@/components/sound-toggle";
 import "./globals.css";
 
 const sora = Sora({ variable: "--font-sora", subsets: ["latin"], weight: ["400", "600", "700", "800"] });
@@ -36,6 +37,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body className={`${sora.variable} ${inter.variable} ${jetbrains.variable} antialiased`}>
         {children}
         <CommandPalette />
+        <SoundToggle />
         <VisitTracker />
         <Toaster
           theme="dark"
