@@ -23,7 +23,7 @@ import {
   FileWarning,
   ChevronRight,
 } from "lucide-react";
-import { ScrambleText, TargetingField, Tilt, Magnetic, Counter } from "@/components/fx";
+import { ScrambleText, TargetingField, Tilt, Magnetic, Counter, RedactReveal, SpotlightCard, GlitchText } from "@/components/fx";
 
 /* Apple-style easing — long, confident deceleration. */
 const EASE = [0.16, 1, 0.3, 1] as const;
@@ -196,7 +196,9 @@ function DossierCard() {
         <span>No. 4471</span>
       </div>
       <div className="flex items-end gap-5">
-        <div className="font-display text-7xl font-extrabold text-alarm alarm-glow leading-none">F</div>
+        <div className="font-display text-7xl font-extrabold text-alarm alarm-glow leading-none">
+          <GlitchText>F</GlitchText>
+        </div>
         <div className="pb-1.5">
           <div className="font-mono text-xs text-alarm tracking-widest">CRITICAL BREACH</div>
           <div className="font-mono text-[11px] text-text-lo mt-1">31 / 100 hardening</div>
@@ -426,14 +428,24 @@ export default function Landing() {
           <div className="grid md:grid-cols-3 gap-px bg-white/[0.05] rounded-2xl overflow-hidden mt-12">
             {INCIDENTS.map((it, i) => (
               <Reveal key={it.title} delay={i * 0.08}>
-                <div className="bg-ink-50 p-7 h-full">
-                  <div className="flex items-center justify-between mb-5">
-                    <it.icon className="w-6 h-6 text-alarm" />
-                    <span className="filelabel text-text-lo">{it.tag}</span>
+                <SpotlightCard
+                  className="bg-ink-50 p-7 h-full"
+                  spot="rgba(255,69,58,0.16)"
+                  border="rgba(255,69,58,0.45)"
+                >
+                  <div className="relative z-10">
+                    <div className="flex items-center justify-between mb-5">
+                      <it.icon className="w-6 h-6 text-alarm" />
+                      <span className="filelabel text-alarm/80">{it.tag}</span>
+                    </div>
+                    <h3 className="font-display text-xl font-semibold mb-2">
+                      <ScrambleText text={it.title} trigger="view" />
+                    </h3>
+                    <RedactReveal delay={0.15}>
+                      <p className="text-sm text-text-mid leading-relaxed">{it.desc}</p>
+                    </RedactReveal>
                   </div>
-                  <h3 className="font-display text-xl font-semibold mb-2">{it.title}</h3>
-                  <p className="text-sm text-text-mid leading-relaxed">{it.desc}</p>
-                </div>
+                </SpotlightCard>
               </Reveal>
             ))}
           </div>
@@ -460,14 +472,23 @@ export default function Landing() {
               Three steps. <span className="text-phosphor-gradient">Deterministic truth.</span>
             </h2>
           </Reveal>
-          <div className="space-y-px bg-white/[0.05] rounded-2xl overflow-hidden">
+          <div className="relative space-y-px bg-white/[0.05] rounded-2xl overflow-hidden">
+            <motion.div
+              aria-hidden
+              initial={{ scaleY: 0 }}
+              whileInView={{ scaleY: 1 }}
+              viewport={{ once: true, margin: "-80px" }}
+              transition={{ duration: 1.2, ease: EASE }}
+              style={{ originY: 0 }}
+              className="absolute left-[7.6rem] top-8 bottom-8 w-px bg-gradient-to-b from-phosphor/70 via-phosphor/30 to-transparent hidden sm:block"
+            />
             {STEPS.map((s, i) => (
               <Reveal key={s.title} delay={i * 0.08}>
-                <div className="bg-ink-50 p-7 flex gap-6 items-start">
-                  <div className="shrink-0 font-mono text-3xl font-extrabold text-phosphor/40 w-12 tabular-nums">
-                    0{i + 1}
+                <div className="relative bg-ink-50 p-7 flex gap-6 items-start">
+                  <div className="shrink-0 font-mono text-3xl font-extrabold text-phosphor/50 w-12 tabular-nums">
+                    <ScrambleText text={`0${i + 1}`} trigger="view" />
                   </div>
-                  <div className="shrink-0 w-11 h-11 rounded-xl panel flex items-center justify-center">
+                  <div className="shrink-0 w-11 h-11 rounded-xl panel flex items-center justify-center relative z-10 glow-phosphor">
                     <s.icon className="w-5 h-5 text-phosphor" />
                   </div>
                   <div>
@@ -491,14 +512,18 @@ export default function Landing() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-white/[0.05] rounded-2xl overflow-hidden">
             {CATEGORIES.map((cat, i) => (
               <Reveal key={cat.title} delay={(i % 3) * 0.06}>
-                <div className="bg-ink-50 p-7 h-full hover:bg-ink-100 transition-colors group">
-                  <div className="flex items-center justify-between mb-4">
-                    <cat.icon className="w-6 h-6 text-phosphor group-hover:scale-110 transition-transform" />
-                    <span className="filelabel text-text-lo">{cat.tag}</span>
+                <SpotlightCard className="bg-ink-50 p-7 h-full hover:bg-ink-100 transition-colors group">
+                  <div className="relative z-10">
+                    <div className="flex items-center justify-between mb-4">
+                      <cat.icon className="w-6 h-6 text-phosphor group-hover:scale-110 transition-transform" />
+                      <span className="filelabel text-text-lo">{cat.tag}</span>
+                    </div>
+                    <h3 className="font-display text-lg font-semibold mb-1.5">
+                      <ScrambleText text={cat.title} trigger="hover" />
+                    </h3>
+                    <p className="text-sm text-text-mid leading-relaxed">{cat.desc}</p>
                   </div>
-                  <h3 className="font-display text-lg font-semibold mb-1.5">{cat.title}</h3>
-                  <p className="text-sm text-text-mid leading-relaxed">{cat.desc}</p>
-                </div>
+                </SpotlightCard>
               </Reveal>
             ))}
           </div>
@@ -525,7 +550,9 @@ export default function Landing() {
             </div>
           </Reveal>
           <Reveal delay={0.1}>
-            <DossierCard />
+            <Tilt glare max={9}>
+              <DossierCard />
+            </Tilt>
           </Reveal>
         </div>
       </section>
@@ -535,17 +562,24 @@ export default function Landing() {
         <div className="max-w-3xl mx-auto">
           <Reveal>
             <div className="panel-strong crt ticks rounded-3xl p-12 text-center">
-              <Crosshair className="w-12 h-12 text-phosphor mx-auto mb-6 animate-float" />
-              <h2 className="display-md font-display mb-3">Find out before an attacker does.</h2>
+              <div className="relative mx-auto mb-6 w-12 h-12">
+                <span className="absolute inset-0 rounded-full animate-pulse-ring" />
+                <Crosshair className="w-12 h-12 text-phosphor animate-float" />
+              </div>
+              <h2 className="display-md font-display mb-3">
+                <ScrambleText text="Find out before an attacker does." trigger="view" />
+              </h2>
               <p className="text-text-mid mb-8 max-w-md mx-auto">
                 Free, open-source, no sign-up. Runs against your own key — no prompt or key is ever stored.
               </p>
-              <Link
-                href="/scan"
-                className="inline-flex items-center gap-2 rounded-full bg-phosphor px-8 py-4 text-lg font-semibold text-black glow-phosphor hover:bg-phosphor-soft transition-colors"
-              >
-                Run the gauntlet <ArrowRight className="w-5 h-5" />
-              </Link>
+              <Magnetic>
+                <Link
+                  href="/scan"
+                  className="inline-flex items-center gap-2 rounded-full bg-phosphor px-8 py-4 text-lg font-semibold text-black glow-phosphor hover:bg-phosphor-soft transition-colors"
+                >
+                  Run the gauntlet <ArrowRight className="w-5 h-5" />
+                </Link>
+              </Magnetic>
             </div>
           </Reveal>
         </div>
@@ -554,7 +588,7 @@ export default function Landing() {
       <footer className="border-t border-white/[0.05] py-10 px-6">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 filelabel text-text-lo">
           <div>
-            <span className="text-phosphor">GAUNTLET</span> — RED-TEAM YOUR PROMPT · AUTHORIZED USE ONLY
+            <ScrambleText text="GAUNTLET" trigger="hover" className="text-phosphor" /> — RED-TEAM YOUR PROMPT · AUTHORIZED USE ONLY
           </div>
           <a
             href="https://github.com/venkat22022202/gauntlet"

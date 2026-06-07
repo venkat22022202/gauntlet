@@ -10,6 +10,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   motion,
   useInView,
+  useMotionTemplate,
   useMotionValue,
   useReducedMotion,
   useSpring,
@@ -290,14 +291,27 @@ export function TargetingField() {
   );
 }
 
-/* ── 3D mouse-parallax tilt ─────────────────────────────────── */
-export function Tilt({ children, className, max = 6 }: { children: React.ReactNode; className?: string; max?: number }) {
+/* ── 3D mouse-parallax tilt (+ optional holographic glare) ──── */
+export function Tilt({
+  children,
+  className,
+  max = 6,
+  glare = false,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  max?: number;
+  glare?: boolean;
+}) {
   const reduce = useReducedMotion();
   const ref = useRef<HTMLDivElement>(null);
   const px = useMotionValue(0.5);
   const py = useMotionValue(0.5);
   const rx = useSpring(useTransform(py, [0, 1], [max, -max]), { stiffness: 180, damping: 18 });
   const ry = useSpring(useTransform(px, [0, 1], [-max, max]), { stiffness: 180, damping: 18 });
+  const gx = useTransform(px, [0, 1], [12, 88]);
+  const gy = useTransform(py, [0, 1], [12, 88]);
+  const glareBg = useMotionTemplate`radial-gradient(circle at ${gx}% ${gy}%, rgba(255,255,255,0.16), transparent 55%)`;
 
   if (reduce) return <div className={className}>{children}</div>;
   return (
@@ -314,11 +328,101 @@ export function Tilt({ children, className, max = 6 }: { children: React.ReactNo
         py.set(0.5);
       }}
       style={{ rotateX: rx, rotateY: ry, transformPerspective: 1100, transformStyle: "preserve-3d" }}
-      className={className}
+      className={`${glare ? "relative" : ""} ${className ?? ""}`}
     >
       {children}
+      {glare && (
+        <motion.div
+          aria-hidden
+          style={{ background: glareBg }}
+          className="pointer-events-none absolute inset-0 rounded-[inherit] mix-blend-overlay"
+        />
+      )}
     </motion.div>
   );
+}
+
+/* ── Declassify wipe — redaction recedes to reveal text ─────── */
+export function RedactReveal({
+  children,
+  className,
+  delay = 0,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  delay?: number;
+}) {
+  const reduce = useReducedMotion();
+  return (
+    <div className={`relative ${className ?? ""}`}>
+      {children}
+      {!reduce && (
+        <motion.div
+          aria-hidden
+          initial={{ scaleX: 1 }}
+          whileInView={{ scaleX: 0 }}
+          viewport={{ once: true, margin: "-50px" }}
+          transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1], delay }}
+          style={{ originX: 1, boxShadow: "-3px 0 16px rgba(48,209,88,0.5)" }}
+          className="absolute -inset-x-1 inset-y-0 bg-ink-100 border-l-2 border-phosphor"
+        />
+      )}
+    </div>
+  );
+}
+
+/* ── Cursor-spotlight card ──────────────────────────────────── */
+export function SpotlightCard({
+  children,
+  className,
+  spot = "rgba(48,209,88,0.16)",
+  border = "rgba(48,209,88,0.4)",
+}: {
+  children: React.ReactNode;
+  className?: string;
+  spot?: string;
+  border?: string;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  return (
+    <div
+      ref={ref}
+      onPointerMove={(e) => {
+        const el = ref.current;
+        if (!el) return;
+        const r = el.getBoundingClientRect();
+        el.style.setProperty("--x", `${e.clientX - r.left}px`);
+        el.style.setProperty("--y", `${e.clientY - r.top}px`);
+      }}
+      style={{ "--spot": spot, "--spot-border": border } as React.CSSProperties}
+      className={`spotlight-card ${className ?? ""}`}
+    >
+      {children}
+    </div>
+  );
+}
+
+/* ── Periodic chromatic glitch (ambient, for the grade) ─────── */
+export function GlitchText({
+  children,
+  className,
+  every = 4200,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  every?: number;
+}) {
+  const reduce = useReducedMotion();
+  const [on, setOn] = useState(false);
+  useEffect(() => {
+    if (reduce) return;
+    const id = setInterval(() => {
+      setOn(true);
+      setTimeout(() => setOn(false), 520);
+    }, every);
+    return () => clearInterval(id);
+  }, [reduce, every]);
+  return <span className={`${className ?? ""} ${on ? "animate-glitch" : ""}`}>{children}</span>;
 }
 
 /* ── Magnetic wrapper for CTAs ──────────────────────────────── */
