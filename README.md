@@ -1,17 +1,39 @@
 <p align="center">
-  <img src="https://img.shields.io/badge/License-MIT-a855f7.svg" alt="MIT" />
+  <img src="https://img.shields.io/badge/License-MIT-30d158.svg" alt="MIT" />
   <img src="https://img.shields.io/badge/Next.js_16-060508?logo=next.js" alt="Next.js 16" />
-  <img src="https://img.shields.io/badge/OWASP-LLM01-ff2d55" alt="OWASP LLM01" />
-  <img src="https://img.shields.io/badge/PRs-welcome-22c55e.svg" alt="PRs welcome" />
+  <img src="https://img.shields.io/badge/OWASP-LLM01-ff453a" alt="OWASP LLM01" />
+  <img src="https://img.shields.io/badge/PRs-welcome-30d158.svg" alt="PRs welcome" />
 </p>
 
 <h1 align="center">⊕ GAUNTLET</h1>
 
 <p align="center">
   <strong>Is your AI agent hackable?</strong><br/>
-  Run your system prompt through a gauntlet of real prompt-injection and jailbreak
-  attacks. Get a scored breach report — line by line — in about a minute.
+  Paste your system prompt, point Gauntlet at your real model, and watch real
+  prompt-injection &amp; indirect-injection attacks hit it live — a deterministic
+  canary judge and a brutal, shareable grade, in about a minute.
 </p>
+
+<p align="center">
+  <a href="https://gauntlet-indol.vercel.app"><strong>▶&nbsp; Live demo — gauntlet-indol.vercel.app</strong></a>
+  <br/>
+  <sub>no sign-up · bring your own key, or run the no-key live demo</sub>
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/hero.png" alt="Gauntlet — is your AI agent hackable?" width="820" />
+</p>
+
+<table align="center">
+  <tr>
+    <td width="50%"><img src="docs/screenshots/report.png" alt="Shareable breach dossier — letter grade, killing blow, OWASP mapping" /></td>
+    <td width="50%"><img src="docs/screenshots/game.png" alt="Break the agent — Gandalf-style offense game" /></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>The shareable <strong>breach dossier</strong> — grade, killing blow, OWASP mapping.</sub></td>
+    <td align="center"><sub><strong>Offense mode</strong> — can you make a hardened agent leak its secret?</sub></td>
+  </tr>
+</table>
 
 ---
 
