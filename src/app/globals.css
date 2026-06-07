@@ -59,9 +59,28 @@
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);   /* hero reveals — long, smooth deceleration */
   --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-soft: cubic-bezier(0.4, 0, 0.2, 1);         /* hovers / micro-interactions */
+  /* Emil Kowalski's strong curves — the built-in CSS easings lack punch */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
   --dur-fast: 0.18s;
   --dur-med: 0.4s;
   --dur-slow: 0.8s;
+}
+
+/* Press feedback — every pressable element should confirm it heard the user.
+   "Buttons must feel responsive." (subtle scale, fast custom ease-out) */
+button {
+  transition: transform 160ms var(--ease-out);
+}
+button:active:not(:disabled) {
+  transform: scale(0.97);
+}
+.press {
+  transition: transform 160ms var(--ease-out);
+}
+.press:active {
+  transform: scale(0.97);
 }
 
 * {

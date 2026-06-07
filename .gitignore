@@ -30,6 +30,9 @@ yarn-debug.log*
 # vercel
 .vercel
 
+# agent skills (local dev tooling, installed via `npx skills add`)
+.agents
+
 # private / proprietary agent prompts dropped in for local testing — never commit
 MAADA_*.md
 *_AGENT_REQUIREMENTS.md

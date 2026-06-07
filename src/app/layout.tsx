@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Sora, Inter, JetBrains_Mono } from "next/font/google";
 import { Toaster } from "sonner";
 import { VisitTracker } from "@/components/visit-tracker";
+import { CommandPalette } from "@/components/command-palette";
 import "./globals.css";
 
 const sora = Sora({ variable: "--font-sora", subsets: ["latin"], weight: ["400", "600", "700", "800"] });
@@ -34,6 +35,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="en" className="dark">
       <body className={`${sora.variable} ${inter.variable} ${jetbrains.variable} antialiased`}>
         {children}
+        <CommandPalette />
         <VisitTracker />
         <Toaster
           theme="dark"

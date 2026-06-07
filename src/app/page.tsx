@@ -286,6 +286,14 @@ export default function Landing() {
             </span>
           </Link>
           <div className="flex items-center gap-4">
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new Event("gauntlet:cmdk"))}
+              className="hidden sm:inline-flex items-center filelabel text-text-lo border border-white/10 rounded-md px-2 py-1 hover:text-text-hi hover:border-phosphor/40 transition-colors"
+              aria-label="Open command menu"
+            >
+              ⌘K
+            </button>
             <Link href="/break" className="text-sm text-text-mid hover:text-text-hi transition-colors hidden sm:inline">
               Break it
             </Link>
@@ -350,7 +358,7 @@ export default function Landing() {
             <Magnetic>
               <Link
                 href="/scan"
-                className="group inline-flex items-center gap-2 rounded-full bg-phosphor px-7 py-3.5 text-base font-semibold text-black glow-phosphor hover:bg-phosphor-soft transition-colors"
+                className="press group inline-flex items-center gap-2 rounded-full bg-phosphor px-7 py-3.5 text-base font-semibold text-black glow-phosphor hover:bg-phosphor-soft transition-colors"
               >
                 Run the gauntlet
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -359,7 +367,7 @@ export default function Landing() {
             <Magnetic>
               <Link
                 href="/scan?demo=1"
-                className="inline-flex items-center gap-2 rounded-full border border-phosphor/40 bg-phosphor/[0.06] px-6 py-3.5 text-base font-semibold text-phosphor hover:bg-phosphor/[0.12] transition-colors"
+                className="press inline-flex items-center gap-2 rounded-full border border-phosphor/40 bg-phosphor/[0.06] px-6 py-3.5 text-base font-semibold text-phosphor hover:bg-phosphor/[0.12] transition-colors"
               >
                 Try a live demo
               </Link>
@@ -580,7 +588,7 @@ export default function Landing() {
               <Magnetic>
                 <Link
                   href="/scan"
-                  className="inline-flex items-center gap-2 rounded-full bg-phosphor px-8 py-4 text-lg font-semibold text-black glow-phosphor hover:bg-phosphor-soft transition-colors"
+                  className="press inline-flex items-center gap-2 rounded-full bg-phosphor px-8 py-4 text-lg font-semibold text-black glow-phosphor hover:bg-phosphor-soft transition-colors"
                 >
                   Run the gauntlet <ArrowRight className="w-5 h-5" />
                 </Link>
