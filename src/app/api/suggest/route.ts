@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { rateLimit, clientIp } from "@/server/ratelimit";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -39,6 +40,14 @@ const SAFETY = [
 ].map((category) => ({ category, threshold: "BLOCK_ONLY_HIGH" }));
 
 export async function POST(req: NextRequest) {
+  const rl = await rateLimit("suggest", clientIp(req), 12, "1 h");
+  if (rl.limited) {
+    return NextResponse.json(
+      { error: "AI-suggestion limit reached for now — try again later, or add your own attacks." },
+      { status: 429 }
+    );
+  }
+
   let body: z.infer<typeof Body>;
   try {
     body = Body.parse(await req.json());

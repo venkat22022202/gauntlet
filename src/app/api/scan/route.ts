@@ -2,14 +2,12 @@ import { NextRequest } from "next/server";
 import { z } from "zod";
 import {
   prepareScan,
-  runPrepared,
   buildBuiltinPrepared,
   type ScanTarget,
-  type AttackOutcome,
   type PreparedAttack,
 } from "@/lib/runner";
-import { scoreFromResults, type Verdict } from "@/lib/judge";
-import { saveScan } from "@/server/persistence";
+import { createScanStream } from "@/lib/scan-engine";
+import { rateLimit, clientIp } from "@/server/ratelimit";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -21,7 +19,6 @@ const BodySchema = z.object({
   apiKey: z.string().min(1),
   model: z.string().min(1).default("gpt-5.4-mini"),
   systemPrompt: z.string().default(""),
-  // attack selection
   includeBuiltins: z.boolean().default(true),
   customAttacks: z
     .array(
@@ -35,41 +32,34 @@ const BodySchema = z.object({
     )
     .max(40)
     .optional(),
-  // optional persistence
   save: z.boolean().default(true),
   label: z.string().max(120).optional(),
   makePublic: z.boolean().default(false),
   agentName: z.string().max(80).optional(),
 });
 
-function hostOf(url: string): string | null {
-  try {
-    return new URL(url).host;
-  } catch {
-    return null;
-  }
+function err(message: string, status: number) {
+  return new Response(JSON.stringify({ type: "error", message }), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
 }
 
 /**
- * POST /api/scan
- * Streams newline-delimited JSON (NDJSON), one object per event:
- *   { type: "meta",    total, model }
- *   { type: "result",  index, outcome }
- *   { type: "done",    score, breached, partial, blocked }
- *   { type: "error",   message }
- *
- * Authorized-use only: the endpoint + key you provide must be for a
- * system you own or have permission to test.
+ * POST /api/scan — streams NDJSON outcomes (see scan-engine for the event shape).
+ * The endpoint + key you provide must be for a system you own or are authorized
+ * to test. Light per-IP rate limit guards our infra (the model cost is yours).
  */
 export async function POST(req: NextRequest) {
+  // Generous limit — the user is spending their own key; this only stops abuse.
+  const rl = await rateLimit("scan", clientIp(req), 40, "10 m");
+  if (rl.limited) return err("Too many scans from this IP — give it a minute.", 429);
+
   let body: z.infer<typeof BodySchema>;
   try {
     body = BodySchema.parse(await req.json());
-  } catch (err) {
-    return new Response(
-      JSON.stringify({ type: "error", message: `Invalid request: ${(err as Error).message}` }),
-      { status: 400, headers: { "Content-Type": "application/json" } }
-    );
+  } catch (e) {
+    return err(`Invalid request: ${(e as Error).message}`, 400);
   }
 
   const target: ScanTarget = {
@@ -81,7 +71,6 @@ export async function POST(req: NextRequest) {
 
   const { canary, wrapped } = prepareScan(target);
 
-  // Build the run list: built-in attacks (optional) + AI-suggested / custom attacks.
   const prepared: PreparedAttack[] = [];
   if (body.includeBuiltins) prepared.push(...buildBuiltinPrepared(canary));
   if (body.customAttacks?.length) {
@@ -98,86 +87,18 @@ export async function POST(req: NextRequest) {
   }
 
   if (prepared.length === 0) {
-    return new Response(
-      JSON.stringify({ type: "error", message: "No attacks selected — enable built-ins or add suggested injections." }),
-      { status: 400, headers: { "Content-Type": "application/json" } }
-    );
+    return err("No attacks selected — enable built-ins or add suggested injections.", 400);
   }
 
-  const encoder = new TextEncoder();
-
-  const stream = new ReadableStream({
-    async start(controller) {
-      const send = (obj: unknown) =>
-        controller.enqueue(encoder.encode(JSON.stringify(obj) + "\n"));
-
-      send({ type: "meta", total: prepared.length, model: target.model });
-
-      const tally = { breached: 0, partial: 0, blocked: 0, error: 0 };
-      const weighted: { verdict: Verdict; severityWeight: number }[] = [];
-      const collected: AttackOutcome[] = [];
-
-      // bounded concurrency so the console fills quickly without hammering
-      const CONCURRENCY = 4;
-      let cursor = 0;
-      let emitted = 0;
-
-      async function worker() {
-        while (cursor < prepared.length) {
-          const myIndex = cursor++;
-          const outcome = await runPrepared(target, prepared[myIndex], canary, wrapped);
-          tally[outcome.verdict]++;
-          weighted.push({ verdict: outcome.verdict, severityWeight: outcome.severityWeight });
-          collected.push(outcome);
-          send({ type: "result", index: emitted++, outcome });
-        }
-      }
-
-      try {
-        await Promise.all(
-          Array.from({ length: Math.min(CONCURRENCY, prepared.length) }, () => worker())
-        );
-
-        const score = scoreFromResults(weighted); // null if every attack errored
-
-        // Persist only meaningful scans (at least one attack actually ran).
-        let scanId: string | null = null;
-        if (body.save && score !== null) {
-          try {
-            scanId = await saveScan({
-              label: body.label ?? null,
-              model: target.model,
-              endpointHost: hostOf(target.endpoint),
-              systemPrompt: target.systemPrompt,
-              outcomes: collected,
-              score,
-              breached: tally.breached,
-              partial: tally.partial,
-              blocked: tally.blocked,
-              isPublic: body.makePublic,
-              agentName: body.agentName ?? null,
-            });
-          } catch {
-            // persistence is best-effort; never fail the scan because of it
-            scanId = null;
-          }
-        }
-
-        send({
-          type: "done",
-          score, // number, or null when nothing reached the model
-          breached: tally.breached,
-          partial: tally.partial,
-          blocked: tally.blocked,
-          errored: tally.error,
-          scanId,
-        });
-      } catch (err) {
-        send({ type: "error", message: (err as Error).message });
-      } finally {
-        controller.close();
-      }
-    },
+  const stream = createScanStream({
+    target,
+    prepared,
+    canary,
+    wrapped,
+    save: body.save,
+    label: body.label ?? null,
+    makePublic: body.makePublic,
+    agentName: body.agentName ?? null,
   });
 
   return new Response(stream, {

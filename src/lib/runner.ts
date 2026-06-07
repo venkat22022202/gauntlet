@@ -52,7 +52,7 @@ export interface PreparedAttack {
   prompt: string;
 }
 
-async function callModel(
+export async function callModel(
   target: ScanTarget,
   systemPrompt: string,
   userMessage: string,
