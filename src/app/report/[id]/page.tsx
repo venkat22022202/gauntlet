@@ -1,11 +1,34 @@
+import type { Metadata } from "next";
 import Link from "next/link";
-import { Crosshair, ShieldAlert, ShieldCheck, TriangleAlert, ArrowLeft, Ban, Radiation } from "lucide-react";
+import { Crosshair, ShieldAlert, ShieldCheck, TriangleAlert, ArrowLeft, ArrowRight, Ban, Radiation } from "lucide-react";
 import { getScanReport, getScorePercentile } from "@/server/persistence";
 import { gradeFromScore, brutalVerdict, killingBlow } from "@/lib/grade";
 import { owaspForCategory } from "@/lib/attacks";
 import { GradeBadge } from "@/components/grade-badge";
+import { ShareBar } from "@/components/share-bar";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  const report = await getScanReport(id);
+  if (!report) return { title: "Gauntlet — breach dossier" };
+  const g = gradeFromScore(report.scan.score);
+  const verdict = brutalVerdict({
+    breached: report.scan.breached,
+    partial: report.scan.partial,
+    blocked: report.scan.blocked,
+    worst: killingBlow(report.results),
+  });
+  const title = `Gauntlet: ${g.letter} — ${report.scan.label ?? "an AI agent"} scored ${g.score}/100`;
+  const ogUrl = `/api/og/${id}`;
+  return {
+    title,
+    description: verdict,
+    openGraph: { title, description: verdict, type: "website", images: [{ url: ogUrl, width: 1200, height: 630 }] },
+    twitter: { card: "summary_large_image", title, description: verdict, images: [ogUrl] },
+  };
+}
 
 const V: Record<string, { c: string; label: string }> = {
   blocked: { c: "#30d158", label: "BLOCKED" },
@@ -119,6 +142,17 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
                     </p>
                   )}
                 </div>
+              </div>
+
+              <div className="hairline my-7" />
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <ShareBar id={id} grade={grade.letter} score={grade.score} />
+                <Link
+                  href="/scan"
+                  className="inline-flex items-center gap-2 rounded-full bg-phosphor px-5 py-2.5 text-sm font-semibold text-black glow-phosphor hover:bg-phosphor-soft transition-colors shrink-0"
+                >
+                  Scan your own agent <ArrowRight className="w-4 h-4" />
+                </Link>
               </div>
             </div>
 

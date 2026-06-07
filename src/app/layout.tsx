@@ -9,6 +9,7 @@ const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
 const jetbrains = JetBrains_Mono({ variable: "--font-jetbrains", subsets: ["latin"] });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://gauntlet-indol.vercel.app"),
   title: "Gauntlet — Is your AI agent hackable?",
   description:
     "Run your AI agent's system prompt through a gauntlet of real prompt-injection and jailbreak attacks. Get a scored vulnerability report in 60 seconds.",

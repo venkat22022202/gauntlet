@@ -108,6 +108,14 @@ export async function getScanReport(id: string): Promise<ScanReport | null> {
   return { scan, results };
 }
 
+/** Lightweight single-row fetch for the OG image / badge (no results join). */
+export async function getScanSummary(id: string) {
+  const db = getDb();
+  if (!db) return null;
+  const [scan] = await db.select().from(scans).where(eq(scans.id, id)).limit(1);
+  return scan ?? null;
+}
+
 export async function getLeaderboard(limit = 50) {
   const db = getDb();
   if (!db) return [];
