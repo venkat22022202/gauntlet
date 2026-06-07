@@ -263,6 +263,9 @@ export default function Landing() {
             </span>
           </Link>
           <div className="flex items-center gap-4">
+            <Link href="/break" className="text-sm text-text-mid hover:text-text-hi transition-colors hidden sm:inline">
+              Break it
+            </Link>
             <a
               href="https://github.com/venkat22022202/gauntlet"
               className="text-sm text-text-mid hover:text-text-hi transition-colors items-center gap-1.5 hidden sm:flex"
@@ -327,6 +330,12 @@ export default function Landing() {
               Run the gauntlet
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Link>
+            <Link
+              href="/scan?demo=1"
+              className="inline-flex items-center gap-2 rounded-full border border-phosphor/40 bg-phosphor/[0.06] px-6 py-3.5 text-base font-semibold text-phosphor hover:bg-phosphor/[0.12] transition-colors"
+            >
+              Try a live demo
+            </Link>
             <a href="#how" className="text-sm text-text-mid hover:text-text-hi transition-colors inline-flex items-center gap-1">
               how it works <ChevronRight className="w-4 h-4" />
             </a>
@@ -344,6 +353,18 @@ export default function Landing() {
               </span>
             ))}
           </motion.div>
+
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.8, delay: 0.42 }}
+            className="mt-8 text-sm text-text-lo"
+          >
+            Not ready to test yours?{" "}
+            <Link href="/break" className="text-phosphor hover:underline">
+              Can you break a hardened agent? →
+            </Link>
+          </motion.p>
         </div>
 
         {/* the product shot */}

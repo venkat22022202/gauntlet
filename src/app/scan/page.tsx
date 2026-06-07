@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import {
@@ -114,17 +114,55 @@ export default function ScanPage() {
   const [openRow, setOpenRow] = useState<string | null>(null);
   const consoleRef = useRef<HTMLDivElement>(null);
 
+  function resetRun() {
+    setResults([]);
+    setSummary(null);
+    setTotal(0);
+    setOpenRow(null);
+  }
+
+  // Shared NDJSON consumer for both the real scan and the no-key demo.
+  async function consume(res: Response) {
+    if (!res.ok || !res.body) {
+      const err = await res.json().catch(() => ({ message: `HTTP ${res.status}` }));
+      throw new Error(err.message ?? `HTTP ${res.status}`);
+    }
+    const reader = res.body.getReader();
+    const dec = new TextDecoder();
+    let buf = "";
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      let idx: number;
+      while ((idx = buf.indexOf("\n")) >= 0) {
+        const line = buf.slice(0, idx).trim();
+        buf = buf.slice(idx + 1);
+        if (!line) continue;
+        const evt = JSON.parse(line);
+        if (evt.type === "meta") {
+          setTotal(evt.total);
+        } else if (evt.type === "result") {
+          setResults((r) => [...r, evt.outcome]);
+          requestAnimationFrame(() => {
+            consoleRef.current?.scrollTo({ top: consoleRef.current.scrollHeight, behavior: "smooth" });
+          });
+        } else if (evt.type === "done") {
+          setSummary({ score: evt.score, breached: evt.breached, partial: evt.partial, blocked: evt.blocked, errored: evt.errored, scanId: evt.scanId });
+        } else if (evt.type === "error") {
+          throw new Error(evt.message);
+        }
+      }
+    }
+  }
+
   async function runScan() {
     if (!apiKey.trim()) {
       toast.error("Add an API key for the endpoint you want to test.");
       return;
     }
     setRunning(true);
-    setResults([]);
-    setSummary(null);
-    setTotal(0);
-    setOpenRow(null);
-
+    resetRun();
     try {
       const res = await fetch("/api/scan", {
         method: "POST",
@@ -140,46 +178,40 @@ export default function ScanPage() {
           agentName: makePublic ? agentName : undefined,
         }),
       });
-
-      if (!res.ok || !res.body) {
-        const err = await res.json().catch(() => ({ message: `HTTP ${res.status}` }));
-        throw new Error(err.message ?? `HTTP ${res.status}`);
-      }
-
-      const reader = res.body.getReader();
-      const dec = new TextDecoder();
-      let buf = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buf += dec.decode(value, { stream: true });
-        let idx: number;
-        while ((idx = buf.indexOf("\n")) >= 0) {
-          const line = buf.slice(0, idx).trim();
-          buf = buf.slice(idx + 1);
-          if (!line) continue;
-          const evt = JSON.parse(line);
-          if (evt.type === "meta") {
-            setTotal(evt.total);
-          } else if (evt.type === "result") {
-            setResults((r) => [...r, evt.outcome]);
-            requestAnimationFrame(() => {
-              consoleRef.current?.scrollTo({ top: consoleRef.current.scrollHeight, behavior: "smooth" });
-            });
-          } else if (evt.type === "done") {
-            setSummary({ score: evt.score, breached: evt.breached, partial: evt.partial, blocked: evt.blocked, errored: evt.errored, scanId: evt.scanId });
-          } else if (evt.type === "error") {
-            throw new Error(evt.message);
-          }
-        }
-      }
+      await consume(res);
     } catch (err) {
       toast.error((err as Error).message || "Scan failed");
     } finally {
       setRunning(false);
     }
   }
+
+  // No-key live demo: runs the gauntlet against a sample agent using a server key.
+  async function runDemo() {
+    setRunning(true);
+    resetRun();
+    try {
+      const res = await fetch("/api/demo-scan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{}",
+      });
+      await consume(res);
+      toast.success("That was a real scan, no key needed. Now point it at your own agent.");
+    } catch (err) {
+      toast.error((err as Error).message || "Demo failed");
+    } finally {
+      setRunning(false);
+    }
+  }
+
+  // Auto-run the demo when arriving from a "Try a live demo" link (/scan?demo).
+  useEffect(() => {
+    if (typeof window !== "undefined" && new URLSearchParams(window.location.search).has("demo")) {
+      void runDemo();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function loadModels() {
     if (!apiKey.trim()) {
@@ -452,6 +484,17 @@ export default function ScanPage() {
             {running ? <Radar className="w-4 h-4 animate-spin-slow" /> : <Play className="w-4 h-4" />}
             {running ? `Running… ${results.length}/${total}` : "Run the gauntlet"}
           </button>
+          <button
+            type="button"
+            onClick={runDemo}
+            disabled={running}
+            className="w-full mt-2 inline-flex items-center justify-center gap-2 rounded-xl border border-phosphor/40 bg-phosphor/[0.06] px-4 py-2.5 text-sm font-semibold text-phosphor hover:bg-phosphor/[0.12] transition-colors disabled:opacity-60"
+          >
+            <Sparkles className="w-4 h-4" /> Try a live demo — no key needed
+          </button>
+          <p className="text-[11px] text-text-lo mt-2 text-center">
+            Runs a real scan against a sample agent on our key. No sign-up.
+          </p>
         </div>
 
         {/* CONSOLE / REPORT */}
