@@ -3,7 +3,7 @@
  * No-ops gracefully when the DB is not configured.
  */
 
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, lt, count } from "drizzle-orm";
 import { getDb } from "./db";
 import { scans, scanResults, leaderboard } from "./db/schema";
 import type { AttackOutcome } from "@/lib/runner";
@@ -116,6 +116,25 @@ export async function getLeaderboard(limit = 50) {
     .from(leaderboard)
     .orderBy(desc(leaderboard.breached), desc(leaderboard.createdAt))
     .limit(limit);
+}
+
+/**
+ * Percentile rank of a score among all saved scans: the share of past scans
+ * that were *less hardened* (a strictly lower score). Returns the percentile
+ * and the sample size (so the UI can stay honest at small N), or null when the
+ * DB is disabled or empty.
+ */
+export async function getScorePercentile(
+  score: number
+): Promise<{ percentile: number; sample: number } | null> {
+  const db = getDb();
+  if (!db) return null;
+  const totalRow = await db.select({ n: count() }).from(scans);
+  const total = Number(totalRow[0]?.n ?? 0);
+  if (total < 1) return null;
+  const belowRow = await db.select({ n: count() }).from(scans).where(lt(scans.score, score));
+  const below = Number(belowRow[0]?.n ?? 0);
+  return { percentile: Math.round((below / total) * 100), sample: total };
 }
 
 export async function getRecentPublicScans(limit = 20) {
