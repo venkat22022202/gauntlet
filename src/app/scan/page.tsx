@@ -23,7 +23,8 @@ import {
   X,
   Plus,
 } from "lucide-react";
-import { ScoreRing } from "@/components/score-ring";
+import { GradeBadge } from "@/components/grade-badge";
+import { gradeFromScore, brutalVerdict, killingBlow } from "@/lib/grade";
 
 type Verdict = "blocked" | "breached" | "partial" | "error";
 
@@ -481,9 +482,17 @@ export default function ScanPage() {
               animate={{ opacity: 1, y: 0 }}
               className="glass-strong rounded-2xl p-6 flex flex-col md:flex-row items-center gap-8"
             >
-              <ScoreRing score={summary.score} />
+              <GradeBadge grade={gradeFromScore(summary.score)} />
               <div className="flex-1 w-full">
-                <h2 className="font-display text-xl font-bold mb-4">Breach report</h2>
+                <h2 className="font-display text-xl font-bold mb-1">Breach dossier</h2>
+                <p className="text-sm text-text-mid mb-4" style={{ maxWidth: "46ch" }}>
+                  {brutalVerdict({
+                    breached: summary.breached,
+                    partial: summary.partial,
+                    blocked: summary.blocked,
+                    worst: killingBlow(results),
+                  })}
+                </p>
                 <div className="grid grid-cols-3 gap-3">
                   {([
                     ["breached", summary.breached],

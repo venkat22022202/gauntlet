@@ -1,37 +1,67 @@
 @import "tailwindcss";
 
 /* ============================================================
-   GAUNTLET — "Crucible" theme
-   Glassmorphism · crimson/violet aurora · red-team energy.
-   Deliberately NOT BlackVault: no flat void, no neon-green.
+   GAUNTLET — "Phosphor" theme
+   ------------------------------------------------------------
+   Terminal / CRT identity, executed with Apple-grade craft.
+   · true black surfaces, precisely stepped
+   · phosphor green is the brand voice (Apple systemGreen)
+   · ONE alarm red, reserved exclusively for BREACH
+   · Apple SF-style neutral grays + Apple easing curves
+   · no aurora, no film grain, no violet — monochrome + signal
+   Legacy token names are remapped (not deleted) so pages that
+   haven't been rebuilt yet inherit the new look instead of breaking.
    ============================================================ */
 
 @theme inline {
-  --color-ink-0: #060508;
-  --color-ink-50: #0b0910;
-  --color-ink-100: #110d18;
-  --color-ink-200: #181221;
-  --color-ink-300: #221a30;
+  /* ---- surfaces: true black, stepped elevations ---- */
+  --color-ink-0: #000000;
+  --color-ink-50: #060706;
+  --color-ink-100: #0b0d0b;
+  --color-ink-200: #11140f;
+  --color-ink-300: #1a1f19;
 
-  /* danger / red-team primary */
-  --color-crimson: #ff2d55;
-  --color-crimson-soft: #ff5d7a;
-  /* electric violet */
-  --color-violet: #a855f7;
-  --color-violet-soft: #c98bff;
-  /* hot magenta accent */
-  --color-magenta: #ec4899;
-  /* signal colors */
-  --color-safe: #22c55e;
-  --color-warn: #f5a524;
+  /* ---- phosphor: the terminal voice (brand · links · BLOCKED · cursor) ---- */
+  --color-phosphor: #30d158;       /* Apple systemGreen — luminous on black */
+  --color-phosphor-soft: #5be584;
+  --color-phosphor-dim: #1f7d3f;
 
-  --color-text-hi: #f7f5fb;
-  --color-text-mid: #b3aec4;
-  --color-text-lo: #6b6680;
+  /* ---- alarm: BREACH only ---- */
+  --color-alarm: #ff453a;          /* Apple systemRed */
+  --color-alarm-soft: #ff6961;
+
+  /* ---- amber: PARTIAL / caution ---- */
+  --color-amber: #ff9f0a;          /* Apple systemOrange */
+
+  /* ---- signal aliases ---- */
+  --color-safe: #30d158;
+  --color-warn: #ff9f0a;
+
+  /* ---- legacy aliases (keep pre-rebuild pages on-brand) ---- */
+  --color-crimson: #ff453a;
+  --color-crimson-soft: #ff6961;
+  --color-violet: #30d158;         /* ex-violet accents now read phosphor */
+  --color-violet-soft: #5be584;
+  --color-magenta: #ff9f0a;
+
+  /* ---- text: Apple SF grays for premium restraint ---- */
+  --color-text-hi: #f5f5f7;
+  --color-text-mid: #a1a1a6;
+  --color-text-lo: #6e6e73;
 
   --font-display: var(--font-sora);
   --font-sans: var(--font-inter);
   --font-mono: var(--font-jetbrains);
+}
+
+/* Non-color design tokens (Apple-style motion) live on :root */
+:root {
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);   /* hero reveals — long, smooth deceleration */
+  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-soft: cubic-bezier(0.4, 0, 0.2, 1);         /* hovers / micro-interactions */
+  --dur-fast: 0.18s;
+  --dur-med: 0.4s;
+  --dur-slow: 0.8s;
 }
 
 * {
@@ -41,223 +71,259 @@
 html {
   scroll-behavior: smooth;
   color-scheme: dark;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 body {
-  background: var(--color-ink-0);
+  background: #000;
   color: var(--color-text-hi);
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  position: relative;
   min-height: 100vh;
+  position: relative;
   overflow-x: hidden;
+  letter-spacing: -0.011em; /* Apple-ish optical tightening */
 }
 
-/* ---- Aurora mesh background (the "crazy" part) ---- */
+/* A single, near-invisible phosphor breath behind everything.
+   This replaces the old four-blob aurora — restraint reads premium. */
 body::before {
   content: "";
   position: fixed;
-  inset: -20%;
+  inset: 0;
   z-index: -2;
+  pointer-events: none;
   background:
-    radial-gradient(40% 35% at 18% 12%, rgba(255, 45, 85, 0.22), transparent 60%),
-    radial-gradient(45% 40% at 85% 18%, rgba(168, 85, 247, 0.20), transparent 62%),
-    radial-gradient(50% 45% at 70% 85%, rgba(236, 72, 153, 0.16), transparent 60%),
-    radial-gradient(40% 40% at 12% 80%, rgba(124, 58, 237, 0.16), transparent 60%);
-  filter: blur(20px) saturate(120%);
-  animation: aurora-drift 22s ease-in-out infinite alternate;
+    radial-gradient(70% 50% at 50% -15%, rgba(48, 209, 88, 0.05), transparent 70%),
+    radial-gradient(50% 40% at 50% 118%, rgba(48, 209, 88, 0.035), transparent 72%);
 }
 
-/* fine noise + grid overlay for texture */
-body::after {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background-image:
-    linear-gradient(to right, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
-  background-size: 56px 56px;
-  mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, black 30%, transparent 75%);
-}
+/* ---- selection / scrollbar / focus — small details, done right ---- */
+::selection { background: rgba(48, 209, 88, 0.26); color: #fff; }
 
-@keyframes aurora-drift {
-  0%   { transform: translate3d(0, 0, 0) scale(1); }
-  50%  { transform: translate3d(2%, -1.5%, 0) scale(1.06); }
-  100% { transform: translate3d(-1.5%, 2%, 0) scale(1.04); }
-}
-
-/* ---- Scrollbar ---- */
-::-webkit-scrollbar { width: 7px; height: 7px; }
+::-webkit-scrollbar { width: 9px; height: 9px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(168, 85, 247, 0.35); border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(255, 45, 85, 0.55); }
+::-webkit-scrollbar-thumb { background: rgba(48, 209, 88, 0.20); border-radius: 5px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(48, 209, 88, 0.40); }
 
-::selection { background: rgba(255, 45, 85, 0.30); color: #fff; }
-
-/* ============================================================
-   GLASS PRIMITIVES
-   ============================================================ */
-.glass {
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.06),
-    rgba(255, 255, 255, 0.02)
-  );
-  backdrop-filter: blur(18px) saturate(140%);
-  -webkit-backdrop-filter: blur(18px) saturate(140%);
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  box-shadow:
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.08),
-    0 20px 60px -25px rgba(0, 0, 0, 0.8);
-}
-
-.glass-strong {
-  background: linear-gradient(
-    180deg,
-    rgba(20, 14, 28, 0.72),
-    rgba(12, 9, 18, 0.6)
-  );
-  backdrop-filter: blur(28px) saturate(150%);
-  -webkit-backdrop-filter: blur(28px) saturate(150%);
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  box-shadow:
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.07),
-    0 30px 80px -30px rgba(0, 0, 0, 0.9);
-}
-
-.glass-hover { transition: border-color .25s ease, transform .25s ease, box-shadow .25s ease; }
-.glass-hover:hover {
-  border-color: rgba(255, 45, 85, 0.35);
-  transform: translateY(-2px);
-  box-shadow: 0 24px 70px -28px rgba(255, 45, 85, 0.35);
-}
-
-/* ---- Glow utilities ---- */
-.glow-crimson { box-shadow: 0 0 28px -4px rgba(255, 45, 85, 0.55); }
-.glow-violet  { box-shadow: 0 0 28px -4px rgba(168, 85, 247, 0.55); }
-.glow-safe    { box-shadow: 0 0 22px -6px rgba(34, 197, 94, 0.5); }
-
-.text-gradient {
-  background: linear-gradient(110deg, #ff2d55 0%, #ec4899 40%, #a855f7 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-.text-gradient-violet {
-  background: linear-gradient(110deg, #c98bff, #a855f7 60%, #7c3aed);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-/* divider line with gradient */
-.hairline {
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.14), transparent);
+:focus-visible {
+  outline: 2px solid var(--color-phosphor);
+  outline-offset: 3px;
+  border-radius: 4px;
 }
 
 /* ============================================================
-   ANIMATIONS
+   TYPE SCALE — a deliberate, Apple-grade rhythm
    ============================================================ */
-@keyframes pulse-ring {
-  0%   { box-shadow: 0 0 0 0 rgba(255, 45, 85, 0.5); }
-  70%  { box-shadow: 0 0 0 16px rgba(255, 45, 85, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(255, 45, 85, 0); }
-}
-.animate-pulse-ring { animation: pulse-ring 2s infinite; }
+.display-xl { font-size: clamp(2.8rem, 7vw, 5.5rem); line-height: 0.95; letter-spacing: -0.035em; font-weight: 800; }
+.display-lg { font-size: clamp(2.2rem, 5vw, 3.5rem); line-height: 1.0;  letter-spacing: -0.03em;  font-weight: 800; }
+.display-md { font-size: clamp(1.6rem, 3.4vw, 2.4rem); line-height: 1.08; letter-spacing: -0.022em; font-weight: 700; }
+.lede { font-size: clamp(1.05rem, 1.6vw, 1.3rem); line-height: 1.55; letter-spacing: -0.01em; color: var(--color-text-mid); }
 
-@keyframes scanline {
-  0%   { transform: translateY(-100%); opacity: 0; }
-  10%  { opacity: 1; }
-  90%  { opacity: 1; }
-  100% { transform: translateY(1200%); opacity: 0; }
-}
-.scanline {
-  position: absolute;
-  left: 0; right: 0; height: 2px;
-  background: linear-gradient(90deg, transparent, rgba(255,45,85,0.9), transparent);
-  animation: scanline 2.4s linear infinite;
-}
-
-@keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.15; } }
-.animate-blink { animation: blink 1s step-end infinite; }
-
-@keyframes spin-slow { to { transform: rotate(360deg); } }
-.animate-spin-slow { animation: spin-slow 8s linear infinite; }
-
-@keyframes float-y {
-  0%,100% { transform: translateY(0); }
-  50% { transform: translateY(-8px); }
-}
-.animate-float { animation: float-y 4s ease-in-out infinite; }
-
-/* ============================================================
-   "CLASSIFIED DOSSIER" PRIMITIVES (de-genericize the UI)
-   ============================================================ */
-
-/* film grain — gives surfaces a crafted, non-flat texture */
-.grain { position: relative; }
-.grain::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0.35;
-  mix-blend-mode: overlay;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-}
-
-/* rubber-stamp label (rotated, outlined) */
-.stamp {
-  font-family: var(--font-mono);
-  letter-spacing: 0.22em;
-  border: 3px solid currentColor;
-  border-radius: 9px;
-  padding: 6px 14px;
-  text-transform: uppercase;
-  font-weight: 800;
-  transform: rotate(-11deg);
-  box-shadow: inset 0 0 0 1px currentColor;
-}
-
-/* mono "file header" label */
+/* mono "system" label — the terminal's connective tissue */
 .filelabel {
   font-family: var(--font-mono);
-  letter-spacing: 0.18em;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
   font-size: 11px;
 }
 
-/* redaction bar */
-.redact {
-  display: inline-block;
-  background: #0b0910;
-  border-radius: 3px;
-  color: transparent;
-  position: relative;
+/* ============================================================
+   SURFACES — terminal panels (crisp, not glassy)
+   .glass / .glass-strong kept as aliases so legacy pages inherit this.
+   ============================================================ */
+.panel,
+.glass {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.028), rgba(255, 255, 255, 0.012));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.045),
+    0 1px 2px 0 rgba(0, 0, 0, 0.6);
 }
-.redact::after {
+
+.panel-strong,
+.glass-strong {
+  background: linear-gradient(180deg, #0b0d0b, #060706);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 16px;
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.05),
+    0 30px 80px -45px rgba(0, 0, 0, 0.95);
+}
+
+.glass-hover { transition: border-color var(--dur-med) var(--ease-soft), transform var(--dur-med) var(--ease-soft), box-shadow var(--dur-med) var(--ease-soft); }
+.glass-hover:hover {
+  border-color: rgba(48, 209, 88, 0.40);
+  transform: translateY(-2px);
+  box-shadow: 0 24px 60px -34px rgba(48, 209, 88, 0.30);
+}
+
+/* hairline divider */
+.hairline {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.12), transparent);
+}
+
+/* ============================================================
+   GLOW + TEXT TREATMENTS
+   ============================================================ */
+.glow-phosphor { box-shadow: 0 0 44px -10px rgba(48, 209, 88, 0.5); }
+.glow-alarm,
+.glow-crimson { box-shadow: 0 0 44px -10px rgba(255, 69, 58, 0.55); }
+.glow-violet { box-shadow: 0 0 44px -10px rgba(48, 209, 88, 0.5); }
+.glow-safe { box-shadow: 0 0 30px -8px rgba(48, 209, 88, 0.5); }
+
+.phosphor-glow { text-shadow: 0 0 20px rgba(48, 209, 88, 0.55); }
+.alarm-glow { text-shadow: 0 0 22px rgba(255, 69, 58, 0.6); }
+
+/* premium silver hero text (Apple-style), kept under the legacy class name */
+.text-gradient {
+  background: linear-gradient(180deg, #ffffff 0%, #8e8e93 110%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.text-gradient-violet,
+.text-phosphor-gradient {
+  background: linear-gradient(180deg, #7bf7a6 0%, #30d158 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.text-alarm-gradient {
+  background: linear-gradient(180deg, #ff6961 0%, #ff453a 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ============================================================
+   CRT — opt-in, deliberately restrained (premium, not kitsch)
+   Add `.crt` to a panel to get faint scanlines + a vignette.
+   ============================================================ */
+.crt { position: relative; isolation: isolate; }
+.crt::after {
   content: "";
   position: absolute;
   inset: 0;
-  background: repeating-linear-gradient(45deg, rgba(255,45,85,0.18) 0 6px, transparent 6px 12px);
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 2;
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0) 0px,
+      rgba(0, 0, 0, 0) 2px,
+      rgba(0, 0, 0, 0.14) 3px
+    );
+  mix-blend-mode: multiply;
+  opacity: 0.55;
 }
 
-/* marquee ticker */
-@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-.animate-marquee { animation: marquee 32s linear infinite; }
+/* a single sweeping scanline (used inside live consoles) */
+.scanline {
+  position: absolute;
+  left: 0; right: 0;
+  height: 2px;
+  z-index: 3;
+  background: linear-gradient(90deg, transparent, rgba(48, 209, 88, 0.8), transparent);
+  animation: scanline 3s linear infinite;
+}
+@keyframes scanline {
+  0%   { transform: translateY(-100%); opacity: 0; }
+  8%   { opacity: 1; }
+  92%  { opacity: 1; }
+  100% { transform: translateY(2400%); opacity: 0; }
+}
 
-/* corner ticks for a technical / targeting feel */
+/* corner targeting ticks (technical framing) */
 .ticks { position: relative; }
 .ticks::before, .ticks::after {
   content: "";
   position: absolute;
   width: 12px; height: 12px;
-  border-color: var(--color-crimson);
-  opacity: 0.6;
+  border-color: var(--color-phosphor);
+  opacity: 0.55;
 }
 .ticks::before { top: -1px; left: -1px; border-top: 2px solid; border-left: 2px solid; }
 .ticks::after { bottom: -1px; right: -1px; border-bottom: 2px solid; border-right: 2px solid; }
+
+/* ============================================================
+   EDITORIAL MOMENTS — the shareable dossier vocabulary
+   ============================================================ */
+/* rubber-stamp (rotated, outlined) — slams onto a breached report */
+.stamp {
+  font-family: var(--font-mono);
+  letter-spacing: 0.22em;
+  border: 3px solid currentColor;
+  border-radius: 8px;
+  padding: 6px 14px;
+  text-transform: uppercase;
+  font-weight: 800;
+  transform: rotate(-9deg);
+  box-shadow: inset 0 0 0 1px currentColor;
+}
+
+/* redaction bar — wipes over a leaked span */
+.redact {
+  display: inline-block;
+  background: #0b0d0b;
+  border-radius: 3px;
+  color: transparent;
+  position: relative;
+  overflow: hidden;
+}
+.redact::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(45deg, rgba(255, 69, 58, 0.16) 0 6px, transparent 6px 12px);
+}
+
+/* ============================================================
+   ANIMATIONS (diegetic, not decorative)
+   ============================================================ */
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.1; } }
+.animate-blink { animation: blink 1.05s step-end infinite; }
+
+@keyframes spin-slow { to { transform: rotate(360deg); } }
+.animate-spin-slow { animation: spin-slow 7s linear infinite; }
+
+@keyframes float-y { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+.animate-float { animation: float-y 4s var(--ease-soft) infinite; }
+
+/* CRT power-on flicker — used once on result reveal */
+@keyframes power-on {
+  0%   { opacity: 0; filter: brightness(2.4); transform: scaleY(0.985); }
+  8%   { opacity: 1; }
+  10%  { filter: brightness(0.6); }
+  14%  { filter: brightness(1.5); }
+  18%  { filter: brightness(0.9); }
+  100% { opacity: 1; filter: brightness(1); transform: scaleY(1); }
+}
+.animate-power-on { animation: power-on 0.7s var(--ease-out-quint) both; }
+
+@keyframes pulse-ring {
+  0%   { box-shadow: 0 0 0 0 rgba(255, 69, 58, 0.5); }
+  70%  { box-shadow: 0 0 0 14px rgba(255, 69, 58, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 69, 58, 0); }
+}
+.animate-pulse-ring { animation: pulse-ring 2s infinite; }
+
+/* marquee (kept for any legacy ticker) */
+@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.animate-marquee { animation: marquee 34s linear infinite; }
+
+/* ============================================================
+   ACCESSIBILITY — honor reduced motion
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

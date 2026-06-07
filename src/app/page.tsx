@@ -1,81 +1,130 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { useEffect, useState } from "react";
 import {
   Crosshair,
-  Bug,
-  ShieldAlert,
-  Radar,
-  Swords,
-  Skull,
-  Fingerprint,
-  ScanLine,
-  TriangleAlert,
   ArrowRight,
   Github,
+  ShieldAlert,
+  ShieldCheck,
+  TriangleAlert,
+  Fingerprint,
+  Skull,
+  ScanLine,
+  Bug,
+  Swords,
   KeyRound,
   Target,
+  TriangleAlert as Warn,
+  Mail,
+  Wrench,
+  FileWarning,
+  ChevronRight,
 } from "lucide-react";
 
-// ── Live hero console (illustrative) ─────────────────────────
-const DEMO_FEED = [
-  { name: "Ignore previous instructions", verdict: "breached" },
-  { name: "Repeat-the-above", verdict: "blocked" },
-  { name: "Developer / debug mode", verdict: "breached" },
-  { name: "Base64 smuggling", verdict: "blocked" },
-  { name: "Poisoned document", verdict: "breached" },
-  { name: "Unrestricted persona (DAN)", verdict: "partial" },
-  { name: "Config-as-JSON", verdict: "blocked" },
-  { name: "Forced affirmative prefix", verdict: "breached" },
-  { name: "Sentence completion", verdict: "blocked" },
-  { name: "Spoofed tool result", verdict: "breached" },
+/* Apple-style easing — long, confident deceleration. */
+const EASE = [0.16, 1, 0.3, 1] as const;
+
+/* ────────────────────────────────────────────────────────────
+   Reveal — a single, reusable scroll-choreographed entrance.
+   ──────────────────────────────────────────────────────────── */
+function Reveal({
+  children,
+  delay = 0,
+  y = 20,
+  className,
+}: {
+  children: React.ReactNode;
+  delay?: number;
+  y?: number;
+  className?: string;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-80px" }}
+      transition={{ duration: 0.8, ease: EASE, delay }}
+      className={className}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+/* ────────────────────────────────────────────────────────────
+   Live attack terminal — the hero "product shot".
+   Diegetic motion: it runs a scan, streams verdicts, then the
+   grade powers on and the BREACHED stamp slams down. Loops.
+   ──────────────────────────────────────────────────────────── */
+const FEED = [
+  { n: "Ignore previous instructions", v: "breached" },
+  { n: "Repeat-the-above extraction", v: "blocked" },
+  { n: "Developer / debug mode", v: "breached" },
+  { n: "Base64 instruction smuggling", v: "blocked" },
+  { n: "Poisoned document (indirect)", v: "breached" },
+  { n: "Unrestricted persona — DAN", v: "partial" },
+  { n: "Spoofed tool result", v: "breached" },
+  { n: "Markdown image exfiltration", v: "breached" },
+  { n: "Config-as-JSON dump", v: "blocked" },
 ] as const;
 
-const verdictStyle: Record<string, { c: string; label: string }> = {
-  breached: { c: "#ff2d55", label: "BREACHED" },
-  partial: { c: "#f5a524", label: "PARTIAL" },
-  blocked: { c: "#22c55e", label: "BLOCKED" },
+const VC: Record<string, { c: string; label: string }> = {
+  breached: { c: "#ff453a", label: "BREACHED" },
+  partial: { c: "#ff9f0a", label: "PARTIAL" },
+  blocked: { c: "#30d158", label: "BLOCKED" },
 };
 
-function HeroConsole() {
-  const [n, setN] = useState(0);
+function LiveTerminal() {
+  const reduce = useReducedMotion();
+  const [n, setN] = useState(reduce ? FEED.length : 0);
+
   useEffect(() => {
-    if (n >= DEMO_FEED.length) {
-      const t = setTimeout(() => setN(0), 2600);
+    if (reduce) return;
+    if (n > FEED.length) {
+      const t = setTimeout(() => setN(0), 3000);
       return () => clearTimeout(t);
     }
-    const t = setTimeout(() => setN((v) => v + 1), 480);
+    const t = setTimeout(() => setN((v) => v + 1), n === FEED.length ? 650 : 430);
     return () => clearTimeout(t);
-  }, [n]);
+  }, [n, reduce]);
 
-  const breached = DEMO_FEED.slice(0, n).filter((d) => d.verdict === "breached").length;
+  const shown = FEED.slice(0, Math.min(n, FEED.length));
+  const breached = shown.filter((d) => d.v === "breached").length;
+  const done = n >= FEED.length;
 
   return (
     <div className="relative">
-      <div className="relative glass-strong rounded-2xl overflow-hidden grain ticks">
-        <div className="scanline" />
-        <div className="flex items-center gap-2 px-4 py-3 border-b border-white/5">
-          <span className="w-2.5 h-2.5 rounded-full bg-crimson/80" />
-          <span className="w-2.5 h-2.5 rounded-full bg-warn/80" />
-          <span className="w-2.5 h-2.5 rounded-full bg-safe/80" />
-          <span className="ml-2 font-mono text-xs text-text-mid">gauntlet@redteam: ./run --target acme-supportbot</span>
-          <span className="ml-auto font-mono text-xs text-crimson">{breached} breached</span>
+      <div className="panel-strong crt ticks rounded-2xl overflow-hidden">
+        {!reduce && <div className="scanline" />}
+        {/* title bar */}
+        <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.06]">
+          <span className="w-2.5 h-2.5 rounded-full bg-alarm/80" />
+          <span className="w-2.5 h-2.5 rounded-full bg-amber/80" />
+          <span className="w-2.5 h-2.5 rounded-full bg-phosphor/80" />
+          <span className="ml-2 font-mono text-xs text-text-mid truncate">
+            gauntlet ~ ./run --target acme-supportbot
+          </span>
+          <span className="ml-auto font-mono text-xs text-alarm tabular-nums">{breached} breached</span>
         </div>
-        <div className="p-4 font-mono text-[13px] min-h-[280px]">
-          {DEMO_FEED.slice(0, n).map((d, i) => {
-            const s = verdictStyle[d.verdict];
+
+        {/* stream */}
+        <div className="p-4 font-mono text-[13px] min-h-[300px]">
+          {shown.map((d, i) => {
+            const s = VC[d.v];
             return (
               <motion.div
                 key={i}
-                initial={{ opacity: 0, x: -8 }}
+                initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="flex items-center gap-3 py-1"
+                transition={{ duration: 0.28, ease: EASE }}
+                className="flex items-center gap-3 py-[3px]"
               >
-                <span className="text-text-lo">{String(i + 1).padStart(2, "0")}</span>
+                <span className="text-text-lo tabular-nums">{String(i + 1).padStart(2, "0")}</span>
                 <Crosshair className="w-3.5 h-3.5 shrink-0" style={{ color: s.c }} />
-                <span className="text-text-mid truncate">{d.name}</span>
+                <span className="text-text-mid truncate">{d.n}</span>
                 <span
                   className="ml-auto text-[10px] tracking-widest px-2 py-0.5 rounded shrink-0"
                   style={{ color: s.c, background: `${s.c}1a`, border: `1px solid ${s.c}40` }}
@@ -85,21 +134,85 @@ function HeroConsole() {
               </motion.div>
             );
           })}
-          <span className="inline-block w-2 h-4 bg-crimson ml-1 align-middle animate-blink" />
+          {!done && <span className="inline-block w-2 h-4 bg-phosphor ml-1 align-middle animate-blink" />}
+
+          {/* result */}
+          {done && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.4 }}
+              className="mt-4 pt-4 border-t border-white/[0.06] flex items-center gap-5 animate-power-on"
+            >
+              <div className="leading-none">
+                <span className="font-display text-5xl font-extrabold text-alarm alarm-glow">F</span>
+              </div>
+              <div className="text-xs text-text-mid leading-relaxed">
+                <span className="text-alarm font-semibold">6/9 attacks landed.</span> Leaked the system
+                prompt to a poisoned document.
+                <div className="text-text-lo mt-1">more hardened than 12% of scanned agents · OWASP LLM01</div>
+              </div>
+              <motion.div
+                initial={{ opacity: 0, scale: 1.5, rotate: -16 }}
+                animate={{ opacity: 1, scale: 1, rotate: -9 }}
+                transition={{ type: "spring", stiffness: 220, damping: 14, delay: 0.15 }}
+                className="stamp text-alarm ml-auto hidden sm:block"
+              >
+                Breached
+              </motion.div>
+            </motion.div>
+          )}
         </div>
       </div>
-      {/* rubber stamp */}
-      <motion.div
-        initial={{ opacity: 0, scale: 1.4 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 1, type: "spring", stiffness: 200 }}
-        className="stamp text-crimson absolute -bottom-5 -right-4 text-lg bg-ink-0/40 backdrop-blur-sm"
-      >
-        Breached
-      </motion.div>
     </div>
   );
 }
+
+/* ────────────────────────────────────────────────────────────
+   The shareable dossier — previewed on the landing page.
+   ──────────────────────────────────────────────────────────── */
+function DossierCard() {
+  return (
+    <div className="panel-strong crt rounded-2xl p-6 sm:p-8 max-w-md mx-auto">
+      <div className="flex items-center justify-between filelabel text-text-lo mb-6">
+        <span>GAUNTLET · BREACH DOSSIER</span>
+        <span>No. 4471</span>
+      </div>
+      <div className="flex items-end gap-5">
+        <div className="font-display text-7xl font-extrabold text-alarm alarm-glow leading-none">F</div>
+        <div className="pb-1.5">
+          <div className="font-mono text-xs text-alarm tracking-widest">CRITICAL BREACH</div>
+          <div className="font-mono text-[11px] text-text-lo mt-1">31 / 100 hardening</div>
+        </div>
+        <div className="ml-auto stamp text-alarm text-sm self-start">Breached</div>
+      </div>
+
+      <p className="mt-6 text-sm text-text-mid leading-relaxed">
+        “Leaked its system prompt to a{" "}
+        <span className="text-text-hi">poisoned support ticket</span>.”
+      </p>
+
+      <div className="mt-5 font-mono text-[12px] text-text-lo">
+        leaked:{" "}
+        <span className="redact px-10 align-middle">x</span>{" "}
+        <span className="redact px-6 align-middle">x</span> canary{" "}
+        <span className="redact px-8 align-middle">x</span>
+      </div>
+
+      <div className="mt-6 pt-5 border-t border-white/[0.06] flex items-center justify-between font-mono text-[11px]">
+        <span className="text-text-lo">more hardened than 12% of agents</span>
+        <span className="text-phosphor">LLM01 · ASI02</span>
+      </div>
+    </div>
+  );
+}
+
+/* ──────────────────────────── data ──────────────────────────── */
+const INCIDENTS = [
+  { icon: Mail, tag: "CVE-2025-32711", title: "EchoLeak", desc: "A single email hid instructions. M365 Copilot read the inbox and exfiltrated private data — zero clicks." },
+  { icon: FileWarning, tag: "ShadowLeak", title: "Hidden-text exfil", desc: "White-on-white instructions in a document made ChatGPT's research agent leak data from inside OpenAI." },
+  { icon: Wrench, tag: "MCP03", title: "Tool poisoning", desc: "An invisible payload in a tool description made Cursor read ~/.ssh/id_rsa and send it away." },
+];
 
 const CATEGORIES = [
   { icon: ShieldAlert, title: "Instruction Override", tag: "LLM01.A", desc: "“Ignore previous instructions” and fake authority directives." },
@@ -112,208 +225,280 @@ const CATEGORIES = [
 
 const STEPS = [
   { icon: KeyRound, title: "Plant a canary", desc: "Gauntlet hides a unique secret token inside your prompt and tells the model to guard it — without weakening your own rules." },
-  { icon: Target, title: "Run the gauntlet", desc: "It fires a battery of real injection & jailbreak attacks at your prompt, live, one technique at a time." },
-  { icon: TriangleAlert, title: "Read the breach report", desc: "Any attack that leaks the canary is a deterministic breach. You get a hardening score and the exact transcript of everything that broke it." },
+  { icon: Target, title: "Run the gauntlet", desc: "It fires a battery of real injection & jailbreak attacks at your live model, one technique at a time, streaming each verdict." },
+  { icon: Warn, title: "Read the dossier", desc: "Any attack that leaks the canary is a deterministic breach. You get a letter grade and the exact transcript of everything that broke it." },
 ];
 
-const TICKER = ["INSTRUCTION OVERRIDE", "SYSTEM-PROMPT LEAK", "DAN PERSONA", "BASE64 SMUGGLING", "POISONED DOCUMENT", "SPOOFED TOOL RESULT", "REFUSAL SUPPRESSION", "SENTENCE COMPLETION", "CONFIG-AS-JSON", "TRANSLATION EXTRACTION"];
+/* ──────────────────────────── nav ──────────────────────────── */
+function useScrolled() {
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+  return scrolled;
+}
 
 export default function Landing() {
+  const scrolled = useScrolled();
+
   return (
     <div className="min-h-screen">
       {/* NAV */}
-      <nav className="fixed top-0 inset-x-0 z-50 glass">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5">
-            <Crosshair className="w-5 h-5 text-crimson" />
-            <span className="font-display text-xl font-extrabold tracking-tight text-text-hi">GAUNTLET</span>
-            <span className="filelabel text-text-lo border border-white/10 rounded px-1.5 py-0.5">RED-TEAM · v0.1</span>
+      <nav
+        className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${
+          scrolled ? "bg-black/70 backdrop-blur-xl border-b border-white/[0.06]" : "border-b border-transparent"
+        }`}
+      >
+        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2.5 group">
+            <Crosshair className="w-5 h-5 text-phosphor" />
+            <span className="font-mono text-base font-bold tracking-tight text-text-hi">
+              GAUNTLET<span className="text-phosphor animate-blink">_</span>
+            </span>
+            <span className="filelabel text-text-lo border border-white/10 rounded px-1.5 py-0.5 hidden sm:inline">
+              RED-TEAM
+            </span>
           </Link>
-          <div className="flex items-center gap-3">
-            <a href="https://github.com/venkat22022202/gauntlet" className="text-sm text-text-mid hover:text-text-hi transition-colors flex items-center gap-1.5">
+          <div className="flex items-center gap-4">
+            <a
+              href="https://github.com/venkat22022202/gauntlet"
+              className="text-sm text-text-mid hover:text-text-hi transition-colors items-center gap-1.5 hidden sm:flex"
+            >
               <Github className="w-4 h-4" /> Star
             </a>
             <Link
               href="/scan"
-              className="inline-flex items-center gap-2 rounded-xl bg-crimson px-4 py-2 text-sm font-semibold text-white glow-crimson hover:bg-crimson-soft transition-all"
+              className="inline-flex items-center gap-2 rounded-full border border-phosphor/45 bg-phosphor/[0.08] px-4 py-2 text-sm font-semibold text-phosphor hover:bg-phosphor/[0.16] transition-colors"
             >
               Run a scan <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
         </div>
-        {/* attack ticker */}
-        <div className="border-t border-white/5 overflow-hidden">
-          <div className="flex whitespace-nowrap animate-marquee py-1.5">
-            {[...TICKER, ...TICKER].map((t, i) => (
-              <span key={i} className="filelabel text-text-lo mx-5 flex items-center gap-2">
-                <span className="w-1 h-1 rounded-full bg-crimson" /> {t}
-              </span>
-            ))}
-          </div>
-        </div>
       </nav>
 
-      {/* HERO — asymmetric */}
-      <section className="relative px-6 pt-36 pb-24">
-        <div className="max-w-7xl mx-auto grid lg:grid-cols-[1.05fr_0.95fr] gap-12 items-center">
-          <div>
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="filelabel text-crimson mb-6 flex items-center gap-3"
-            >
-              <span className="w-8 h-px bg-crimson" />
-              CASE FILE — OWASP LLM-01 · PROMPT INJECTION
-            </motion.div>
+      {/* HERO */}
+      <section className="relative px-6 pt-36 pb-20 sm:pt-44">
+        <div className="max-w-4xl mx-auto text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, ease: EASE }}
+            className="filelabel text-phosphor inline-flex items-center gap-2.5 mb-7"
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-phosphor animate-pulse-ring" />
+            REAL ATTACKS · REAL MODEL · NO INSTALL
+          </motion.div>
 
-            <motion.h1
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.05 }}
-              className="font-display text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[0.92] text-left"
-            >
-              Is your AI agent
-              <br />
-              <span className="text-gradient">hackable?</span>
-            </motion.h1>
+          <motion.h1
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.85, ease: EASE, delay: 0.05 }}
+            className="display-xl font-display text-text-hi"
+          >
+            Is your AI agent
+            <br />
+            <span className="text-alarm-gradient alarm-glow">hackable?</span>
+          </motion.h1>
 
-            <motion.p
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.12 }}
-              className="mt-6 text-lg text-text-mid max-w-xl leading-relaxed"
-            >
-              Paste your system prompt. Gauntlet runs it through a barrage of real
-              prompt-injection and jailbreak attacks and shows you, line by line,
-              exactly how it breaks.
-            </motion.p>
-
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.18 }}
-              className="mt-9 flex items-center gap-6"
-            >
-              <Link
-                href="/scan"
-                className="group inline-flex items-center gap-2 rounded-xl bg-crimson px-7 py-3.5 text-base font-semibold text-white glow-crimson hover:bg-crimson-soft transition-all"
-              >
-                Run the gauntlet
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </Link>
-              <a href="#how" className="text-sm text-text-mid hover:text-text-hi transition-colors border-b border-white/15 pb-0.5">
-                how it works ↓
-              </a>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.3 }}
-              className="mt-10 flex flex-wrap gap-x-5 gap-y-2 filelabel text-text-lo"
-            >
-              {["21 ATTACKS", "CANARY-VERIFIED", "BYO-KEY", "NO SIGN-UP", "OPEN-SOURCE"].map((s) => (
-                <span key={s} className="flex items-center gap-2">
-                  <span className="w-1 h-1 rounded-full bg-violet" /> {s}
-                </span>
-              ))}
-            </motion.div>
-          </div>
+          <motion.p
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.85, ease: EASE, delay: 0.12 }}
+            className="lede mt-7 max-w-2xl mx-auto"
+          >
+            Paste your system prompt, point Gauntlet at your real model, and watch dozens of real
+            prompt-injection and indirect-injection attacks hit it live. A deterministic canary judge.
+            A brutal, shareable grade in about a minute.
+          </motion.p>
 
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.25 }}
+            transition={{ duration: 0.85, ease: EASE, delay: 0.19 }}
+            className="mt-10 flex items-center justify-center gap-5 flex-wrap"
           >
-            <HeroConsole />
+            <Link
+              href="/scan"
+              className="group inline-flex items-center gap-2 rounded-full bg-phosphor px-7 py-3.5 text-base font-semibold text-black glow-phosphor hover:bg-phosphor-soft transition-colors"
+            >
+              Run the gauntlet
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </Link>
+            <a href="#how" className="text-sm text-text-mid hover:text-text-hi transition-colors inline-flex items-center gap-1">
+              how it works <ChevronRight className="w-4 h-4" />
+            </a>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.8, delay: 0.3 }}
+            className="mt-10 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 filelabel text-text-lo"
+          >
+            {["21+ ATTACKS", "CANARY-VERIFIED", "BYO-KEY", "NO SIGN-UP", "OPEN-SOURCE"].map((s) => (
+              <span key={s} className="flex items-center gap-2">
+                <span className="w-1 h-1 rounded-full bg-phosphor" /> {s}
+              </span>
+            ))}
           </motion.div>
         </div>
+
+        {/* the product shot */}
+        <motion.div
+          initial={{ opacity: 0, y: 36 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.9, ease: EASE, delay: 0.32 }}
+          className="max-w-3xl mx-auto mt-16"
+        >
+          <LiveTerminal />
+        </motion.div>
       </section>
 
-      {/* CATEGORIES */}
-      <section className="py-16 px-6 border-t border-white/5">
-        <div className="max-w-7xl mx-auto">
-          <div className="filelabel text-text-lo mb-2">// ARSENAL</div>
-          <h2 className="font-display text-3xl md:text-4xl font-bold mb-10">The attacks it throws at you</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-white/5 rounded-2xl overflow-hidden">
-            {CATEGORIES.map((cat, i) => (
-              <motion.div
-                key={cat.title}
-                initial={{ opacity: 0 }}
-                whileInView={{ opacity: 1 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: i * 0.05 }}
-                className="bg-ink-50 p-6 hover:bg-ink-100 transition-colors group"
-              >
-                <div className="flex items-center justify-between mb-4">
-                  <cat.icon className="w-6 h-6 text-crimson group-hover:scale-110 transition-transform" />
-                  <span className="filelabel text-text-lo">{cat.tag}</span>
+      {/* THE PROBLEM MOVED */}
+      <section className="py-24 px-6 border-t border-white/[0.05]">
+        <div className="max-w-6xl mx-auto">
+          <Reveal>
+            <div className="filelabel text-phosphor mb-3">// THE ATTACK MOVED UP A LAYER</div>
+            <h2 className="display-md font-display max-w-3xl">
+              Jailbreaking the chatbot was the easy part.
+            </h2>
+            <p className="lede mt-5 max-w-2xl">
+              Today&apos;s agents read your email, your documents, your tool results — and quietly obey
+              instructions hidden inside them. The 2025–26 headlines were all{" "}
+              <span className="text-text-hi">indirect injection</span>: content the agent merely
+              <em> read</em> turning into an action with your privileges.
+            </p>
+          </Reveal>
+
+          <div className="grid md:grid-cols-3 gap-px bg-white/[0.05] rounded-2xl overflow-hidden mt-12">
+            {INCIDENTS.map((it, i) => (
+              <Reveal key={it.title} delay={i * 0.08}>
+                <div className="bg-ink-50 p-7 h-full">
+                  <div className="flex items-center justify-between mb-5">
+                    <it.icon className="w-6 h-6 text-alarm" />
+                    <span className="filelabel text-text-lo">{it.tag}</span>
+                  </div>
+                  <h3 className="font-display text-xl font-semibold mb-2">{it.title}</h3>
+                  <p className="text-sm text-text-mid leading-relaxed">{it.desc}</p>
                 </div>
-                <h3 className="font-display text-lg font-semibold mb-1.5">{cat.title}</h3>
-                <p className="text-sm text-text-mid leading-relaxed">{cat.desc}</p>
-              </motion.div>
+              </Reveal>
             ))}
           </div>
         </div>
       </section>
 
-      {/* HOW */}
-      <section id="how" className="py-20 px-6">
+      {/* HOW IT WORKS */}
+      <section id="how" className="py-24 px-6">
         <div className="max-w-4xl mx-auto">
-          <div className="filelabel text-text-lo mb-2">// PROTOCOL</div>
-          <h2 className="font-display text-3xl md:text-4xl font-bold mb-10">
-            Three steps. <span className="text-gradient-violet">Total clarity.</span>
-          </h2>
-          <div className="space-y-px bg-white/5 rounded-2xl overflow-hidden">
+          <Reveal>
+            <div className="filelabel text-phosphor mb-3">// PROTOCOL</div>
+            <h2 className="display-md font-display mb-12">
+              Three steps. <span className="text-phosphor-gradient">Deterministic truth.</span>
+            </h2>
+          </Reveal>
+          <div className="space-y-px bg-white/[0.05] rounded-2xl overflow-hidden">
             {STEPS.map((s, i) => (
-              <motion.div
-                key={s.title}
-                initial={{ opacity: 0, x: -16 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: i * 0.1 }}
-                className="bg-ink-50 p-6 flex gap-5 items-start"
-              >
-                <div className="shrink-0 font-display text-3xl font-extrabold text-text-lo w-12">0{i + 1}</div>
-                <div className="shrink-0 w-11 h-11 rounded-xl glass flex items-center justify-center">
-                  <s.icon className="w-5 h-5 text-violet" />
+              <Reveal key={s.title} delay={i * 0.08}>
+                <div className="bg-ink-50 p-7 flex gap-6 items-start">
+                  <div className="shrink-0 font-mono text-3xl font-extrabold text-phosphor/40 w-12 tabular-nums">
+                    0{i + 1}
+                  </div>
+                  <div className="shrink-0 w-11 h-11 rounded-xl panel flex items-center justify-center">
+                    <s.icon className="w-5 h-5 text-phosphor" />
+                  </div>
+                  <div>
+                    <h3 className="font-display text-lg font-semibold mb-1.5">{s.title}</h3>
+                    <p className="text-text-mid leading-relaxed text-sm">{s.desc}</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-display text-lg font-semibold mb-1">{s.title}</h3>
-                  <p className="text-text-mid leading-relaxed text-sm">{s.desc}</p>
-                </div>
-              </motion.div>
+              </Reveal>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* ARSENAL */}
+      <section className="py-24 px-6 border-t border-white/[0.05]">
+        <div className="max-w-6xl mx-auto">
+          <Reveal>
+            <div className="filelabel text-phosphor mb-3">// ARSENAL</div>
+            <h2 className="display-md font-display mb-12">The attacks it throws at you</h2>
+          </Reveal>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-white/[0.05] rounded-2xl overflow-hidden">
+            {CATEGORIES.map((cat, i) => (
+              <Reveal key={cat.title} delay={(i % 3) * 0.06}>
+                <div className="bg-ink-50 p-7 h-full hover:bg-ink-100 transition-colors group">
+                  <div className="flex items-center justify-between mb-4">
+                    <cat.icon className="w-6 h-6 text-phosphor group-hover:scale-110 transition-transform" />
+                    <span className="filelabel text-text-lo">{cat.tag}</span>
+                  </div>
+                  <h3 className="font-display text-lg font-semibold mb-1.5">{cat.title}</h3>
+                  <p className="text-sm text-text-mid leading-relaxed">{cat.desc}</p>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* THE DOSSIER */}
+      <section className="py-24 px-6">
+        <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-14 items-center">
+          <Reveal>
+            <div className="filelabel text-phosphor mb-3">// THE PAYOFF</div>
+            <h2 className="display-md font-display">Every run ends in a dossier built to be shared.</h2>
+            <p className="lede mt-5">
+              Not a private number — a verdict. A letter grade, your percentile, and the exact attack
+              that owned you, rendered as a card your followers will screenshot. Drop the badge in your
+              README and every repo advertises how hard your agent is to break.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3 font-mono text-xs">
+              {["S–F LETTER GRADE", "PERCENTILE RANK", "SHAREABLE CARD", "README BADGE"].map((t) => (
+                <span key={t} className="rounded-full border border-phosphor/30 text-phosphor px-3 py-1.5">
+                  {t}
+                </span>
+              ))}
+            </div>
+          </Reveal>
+          <Reveal delay={0.1}>
+            <DossierCard />
+          </Reveal>
         </div>
       </section>
 
       {/* CTA */}
-      <section className="py-20 px-6">
+      <section className="py-24 px-6">
         <div className="max-w-3xl mx-auto">
-          <div className="relative glass-strong rounded-3xl p-12 text-center overflow-hidden grain ticks">
-            <div className="scanline" />
-            <Crosshair className="w-12 h-12 text-crimson mx-auto mb-6 animate-float" />
-            <h2 className="font-display text-3xl md:text-4xl font-bold mb-3">Find out before an attacker does.</h2>
-            <p className="text-text-mid mb-8 max-w-md mx-auto">
-              Free, open-source, no sign-up. Runs against your own key — no prompt or key is ever stored.
-            </p>
-            <Link
-              href="/scan"
-              className="inline-flex items-center gap-2 rounded-xl bg-crimson px-8 py-4 text-lg font-semibold text-white glow-crimson hover:bg-crimson-soft transition-all"
-            >
-              Run the gauntlet <ArrowRight className="w-5 h-5" />
-            </Link>
-          </div>
+          <Reveal>
+            <div className="panel-strong crt ticks rounded-3xl p-12 text-center">
+              <Crosshair className="w-12 h-12 text-phosphor mx-auto mb-6 animate-float" />
+              <h2 className="display-md font-display mb-3">Find out before an attacker does.</h2>
+              <p className="text-text-mid mb-8 max-w-md mx-auto">
+                Free, open-source, no sign-up. Runs against your own key — no prompt or key is ever stored.
+              </p>
+              <Link
+                href="/scan"
+                className="inline-flex items-center gap-2 rounded-full bg-phosphor px-8 py-4 text-lg font-semibold text-black glow-phosphor hover:bg-phosphor-soft transition-colors"
+              >
+                Run the gauntlet <ArrowRight className="w-5 h-5" />
+              </Link>
+            </div>
+          </Reveal>
         </div>
       </section>
 
-      <footer className="border-t border-white/5 py-8 px-6">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 filelabel text-text-lo">
+      <footer className="border-t border-white/[0.05] py-10 px-6">
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 filelabel text-text-lo">
           <div>
-            <span className="text-crimson">GAUNTLET</span> — RED-TEAM YOUR PROMPT · AUTHORIZED USE ONLY
+            <span className="text-phosphor">GAUNTLET</span> — RED-TEAM YOUR PROMPT · AUTHORIZED USE ONLY
           </div>
-          <a href="https://github.com/venkat22022202/gauntlet" className="hover:text-text-hi transition-colors flex items-center gap-1.5">
+          <a
+            href="https://github.com/venkat22022202/gauntlet"
+            className="hover:text-text-hi transition-colors flex items-center gap-1.5"
+          >
             <Github className="w-4 h-4" /> GITHUB.COM/VENKAT22022202/GAUNTLET
           </a>
         </div>
