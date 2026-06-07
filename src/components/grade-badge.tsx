@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import type { Grade } from "@/lib/grade";
+import { GlitchText } from "./fx";
 
 /**
  * The letter grade, rendered as the dossier hero. Big, glowing, signal-colored.
@@ -36,7 +37,7 @@ export function GradeBadge({
           className="font-display font-extrabold leading-none"
           style={{ color: grade.color, fontSize: size * 0.5, filter: glow }}
         >
-          {grade.letter}
+          {breached ? <GlitchText>{grade.letter}</GlitchText> : grade.letter}
         </motion.span>
         <span
           className="font-mono mt-2 tracking-[0.28em]"

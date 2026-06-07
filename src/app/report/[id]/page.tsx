@@ -6,6 +6,7 @@ import { gradeFromScore, brutalVerdict, killingBlow } from "@/lib/grade";
 import { owaspForCategory } from "@/lib/attacks";
 import { GradeBadge } from "@/components/grade-badge";
 import { ShareBar } from "@/components/share-bar";
+import { Tilt, ScrambleText, SpotlightCard } from "@/components/fx";
 
 export const dynamic = "force-dynamic";
 
@@ -91,7 +92,8 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
         ) : (
           <>
             {/* DOSSIER */}
-            <div className="panel-strong crt ticks rounded-2xl p-7 sm:p-9 mb-6">
+            <Tilt glare max={5} className="mb-6 rounded-2xl">
+            <div className="panel-strong crt ticks rounded-2xl p-7 sm:p-9">
               <div className="flex items-center justify-between filelabel text-text-lo mb-7">
                 <span>GAUNTLET · BREACH DOSSIER</span>
                 <span>No. {id.slice(0, 8).toUpperCase()}</span>
@@ -110,13 +112,13 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
                   </p>
 
                   <p className="text-[15px] leading-relaxed text-text-hi mb-5" style={{ maxWidth: "46ch" }}>
-                    {verdict}
+                    <ScrambleText text={verdict} trigger="view" />
                   </p>
 
                   {worst && (
                     <div className="mb-5 font-mono text-xs flex flex-wrap items-center gap-x-3 gap-y-1.5">
                       <span className="text-text-lo">KILLING BLOW</span>
-                      <span className="text-alarm">{worst.name}</span>
+                      <span className="text-alarm"><ScrambleText text={worst.name} trigger="view" /></span>
                       <span className="text-text-lo">·</span>
                       <span className="text-phosphor">{owaspForCategory(worst.category)}</span>
                     </div>
@@ -155,6 +157,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
                 </Link>
               </div>
             </div>
+            </Tilt>
 
             {/* ATTACK-BY-ATTACK */}
             <div className="panel-strong rounded-2xl overflow-hidden">
@@ -168,7 +171,13 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
                   const exfil = isExfil(r);
                   const reason = Array.isArray(r.reasons) && typeof r.reasons[0] === "string" ? (r.reasons[0] as string) : null;
                   return (
-                    <div key={r.id} className="panel rounded-xl mb-1.5 px-4 py-3">
+                    <SpotlightCard
+                      key={r.id}
+                      className="panel rounded-xl mb-1.5 px-4 py-3"
+                      spot={r.verdict === "breached" ? "rgba(255,69,58,0.14)" : "rgba(48,209,88,0.13)"}
+                      border={r.verdict === "breached" ? "rgba(255,69,58,0.4)" : "rgba(48,209,88,0.35)"}
+                    >
+                      <div className="relative z-10">
                       <div className="flex items-center gap-3">
                         {exfil ? (
                           <Radiation className="w-4 h-4 shrink-0 text-alarm" />
@@ -198,7 +207,8 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
                           {r.response}
                         </pre>
                       )}
-                    </div>
+                      </div>
+                    </SpotlightCard>
                   );
                 })}
               </div>

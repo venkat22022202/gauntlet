@@ -15,6 +15,7 @@ import {
   Terminal,
 } from "lucide-react";
 import { GAME_LEVELS } from "@/lib/demo-agents";
+import { ScrambleText } from "@/components/fx";
 
 interface BreakResult {
   won: boolean;
@@ -161,11 +162,14 @@ export default function BreakPage() {
                 >
                   {result.won ? (
                     <div>
-                      <div className="flex items-center gap-2 font-display font-bold text-phosphor mb-1">
+                      <div className="flex items-center gap-2 font-display font-bold text-phosphor mb-1 animate-glitch">
                         <Trophy className="w-5 h-5" /> BREACHED — you cracked {result.levelName}
                       </div>
                       <p className="text-sm text-text-mid">
-                        Leaked secret: <span className="font-mono text-phosphor">{result.secret}</span>
+                        Leaked secret:{" "}
+                        <span className="font-mono text-phosphor">
+                          <ScrambleText text={result.secret ?? ""} trigger="mount" />
+                        </span>
                       </p>
                       <div className="mt-3 flex flex-wrap gap-3">
                         {!result.isLast ? (

@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { GradeBadge } from "@/components/grade-badge";
 import { gradeFromScore, brutalVerdict, killingBlow } from "@/lib/grade";
+import { ScrambleText, Tilt } from "@/components/fx";
 
 type Verdict = "blocked" | "breached" | "partial" | "error";
 
@@ -523,18 +524,17 @@ export default function ScanPage() {
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              className="glass-strong rounded-2xl p-6 flex flex-col md:flex-row items-center gap-8"
             >
+              <Tilt glare max={5} className="glass-strong rounded-2xl p-6 flex flex-col md:flex-row items-center gap-8">
               <GradeBadge grade={gradeFromScore(summary.score)} />
               <div className="flex-1 w-full">
                 <h2 className="font-display text-xl font-bold mb-1">Breach dossier</h2>
                 <p className="text-sm text-text-mid mb-4" style={{ maxWidth: "46ch" }}>
-                  {brutalVerdict({
-                    breached: summary.breached,
-                    partial: summary.partial,
-                    blocked: summary.blocked,
-                    worst: killingBlow(results),
-                  })}
+                  <ScrambleText
+                    key={brutalVerdict({ breached: summary.breached, partial: summary.partial, blocked: summary.blocked, worst: killingBlow(results) })}
+                    text={brutalVerdict({ breached: summary.breached, partial: summary.partial, blocked: summary.blocked, worst: killingBlow(results) })}
+                    trigger="mount"
+                  />
                 </p>
                 <div className="grid grid-cols-3 gap-3">
                   {([
@@ -575,6 +575,7 @@ export default function ScanPage() {
                   </Link>
                 )}
               </div>
+              </Tilt>
             </motion.div>
           )}
 
@@ -608,11 +609,21 @@ export default function ScanPage() {
                       key={o.attackId}
                       initial={{ opacity: 0, x: -8 }}
                       animate={{ opacity: 1, x: 0 }}
-                      className="rounded-xl mb-1.5 glass glass-hover"
+                      onPointerMove={(e) => {
+                        const el = e.currentTarget as HTMLElement;
+                        const r = el.getBoundingClientRect();
+                        el.style.setProperty("--x", `${e.clientX - r.left}px`);
+                        el.style.setProperty("--y", `${e.clientY - r.top}px`);
+                      }}
+                      style={{
+                        "--spot": o.verdict === "breached" ? "rgba(255,69,58,0.14)" : "rgba(48,209,88,0.12)",
+                        "--spot-border": o.verdict === "breached" ? "rgba(255,69,58,0.4)" : "rgba(48,209,88,0.3)",
+                      } as React.CSSProperties}
+                      className="rounded-xl mb-1.5 glass glass-hover spotlight-card"
                     >
                       <button
                         onClick={() => setOpenRow(open ? null : o.attackId)}
-                        className="w-full flex items-center gap-3 px-4 py-3 text-left"
+                        className="relative z-10 w-full flex items-center gap-3 px-4 py-3 text-left"
                       >
                         <s.Icon className="w-4 h-4 shrink-0" style={{ color: s.c }} />
                         <div className="min-w-0">
@@ -623,7 +634,7 @@ export default function ScanPage() {
                           className="ml-auto text-[10px] tracking-widest px-2 py-0.5 rounded-full shrink-0 font-mono"
                           style={{ color: s.c, background: `${s.c}1a`, border: `1px solid ${s.c}40` }}
                         >
-                          {s.label}
+                          <ScrambleText text={s.label} trigger="mount" />
                         </span>
                         <ChevronDown className={`w-4 h-4 text-text-lo shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
                       </button>
@@ -633,7 +644,7 @@ export default function ScanPage() {
                             initial={{ height: 0, opacity: 0 }}
                             animate={{ height: "auto", opacity: 1 }}
                             exit={{ height: 0, opacity: 0 }}
-                            className="overflow-hidden"
+                            className="relative z-10 overflow-hidden"
                           >
                             <div className="px-4 pb-4 space-y-3">
                               <div>

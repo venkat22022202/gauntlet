@@ -24,6 +24,8 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { ScrambleText, TargetingField, Tilt, Magnetic, Counter, RedactReveal, SpotlightCard, GlitchText } from "@/components/fx";
+import { SmoothScroll } from "@/components/smooth-scroll";
+import { ScrubRun } from "@/components/scrub-run";
 
 /* Apple-style easing — long, confident deceleration. */
 const EASE = [0.16, 1, 0.3, 1] as const;
@@ -63,7 +65,7 @@ function Reveal({
       initial={{ opacity: 0, y }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-80px" }}
-      transition={{ duration: 0.8, ease: EASE, delay }}
+      transition={{ duration: 0.95, ease: EASE, delay }}
       className={className}
     >
       {children}
@@ -264,6 +266,7 @@ export default function Landing() {
   const scrolled = useScrolled();
 
   return (
+    <SmoothScroll>
     <div className="min-h-screen">
       {/* NAV */}
       <nav
@@ -409,6 +412,8 @@ export default function Landing() {
         </motion.div>
       </section>
 
+      <ScrubRun />
+
       {/* THE PROBLEM MOVED */}
       <section className="py-24 px-6 border-t border-white/[0.05]">
         <div className="max-w-6xl mx-auto">
@@ -478,7 +483,7 @@ export default function Landing() {
               initial={{ scaleY: 0 }}
               whileInView={{ scaleY: 1 }}
               viewport={{ once: true, margin: "-80px" }}
-              transition={{ duration: 1.2, ease: EASE }}
+              transition={{ duration: 1.45, ease: EASE }}
               style={{ originY: 0 }}
               className="absolute left-[7.6rem] top-8 bottom-8 w-px bg-gradient-to-b from-phosphor/70 via-phosphor/30 to-transparent hidden sm:block"
             />
@@ -599,5 +604,6 @@ export default function Landing() {
         </div>
       </footer>
     </div>
+    </SmoothScroll>
   );
 }

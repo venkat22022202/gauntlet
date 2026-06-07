@@ -49,8 +49,8 @@ export function ScrambleText({
     }
     const chars = Array.from(text);
     const q = chars.map(() => {
-      const start = Math.floor((Math.random() * 16) / speed);
-      return { start, end: start + Math.floor((Math.random() * 18) / speed) + 8, r: "" };
+      const start = Math.floor((Math.random() * 19) / speed);
+      return { start, end: start + Math.floor((Math.random() * 22) / speed) + 10, r: "" };
     });
     let frame = 0;
     const tick = () => {
@@ -170,14 +170,14 @@ export function TargetingField() {
           const y = j * GAP + GAP / 2;
           const d = m.inside ? Math.hypot(x - m.x, y - m.y) : 99999;
           const near = m.inside ? Math.max(0, 1 - d / 170) : 0;
-          const phase = 0.13 + 0.07 * Math.sin(i * 0.5 + j * 0.3 + t * 0.04);
+          const phase = 0.13 + 0.07 * Math.sin(i * 0.5 + j * 0.3 + t * 0.033);
           const a = phase + near * 0.8;
           const s = 1.1 + near * 1.9;
           ctx.fillStyle = `rgba(48,209,88,${a})`;
           ctx.fillRect(x - s / 2, y - s / 2, s, s);
         }
       }
-      const sy = ((t * 0.7) % (h + 80)) - 40;
+      const sy = ((t * 0.55) % (h + 80)) - 40;
       const g = ctx.createLinearGradient(0, sy - 24, 0, sy + 24);
       g.addColorStop(0, "rgba(48,209,88,0)");
       g.addColorStop(0.5, "rgba(48,209,88,0.14)");
@@ -185,11 +185,11 @@ export function TargetingField() {
       ctx.fillStyle = g;
       ctx.fillRect(0, sy - 24, w, 48);
 
-      if (Math.random() < 0.045 && tracers.length < 6) {
+      if (Math.random() < 0.036 && tracers.length < 6) {
         tracers.push({ x: Math.random() < 0.5 ? 0 : w, y: Math.random() * h, tx: Math.random() * w, ty: Math.random() * h, life: 0 });
       }
       tracers = tracers.filter((tr) => {
-        tr.life += 0.045;
+        tr.life += 0.037;
         const x = tr.x + (tr.tx - tr.x) * eo(tr.life);
         const y = tr.y + (tr.ty - tr.y) * eo(tr.life);
         ctx.strokeStyle = "rgba(48,209,88,0.3)";
@@ -362,7 +362,7 @@ export function RedactReveal({
           initial={{ scaleX: 1 }}
           whileInView={{ scaleX: 0 }}
           viewport={{ once: true, margin: "-50px" }}
-          transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1], delay }}
+          transition={{ duration: 1.05, ease: [0.16, 1, 0.3, 1], delay }}
           style={{ originX: 1, boxShadow: "-3px 0 16px rgba(48,209,88,0.5)" }}
           className="absolute -inset-x-1 inset-y-0 bg-ink-100 border-l-2 border-phosphor"
         />
@@ -406,7 +406,7 @@ export function SpotlightCard({
 export function GlitchText({
   children,
   className,
-  every = 4200,
+  every = 5400,
 }: {
   children: React.ReactNode;
   className?: string;
@@ -475,7 +475,7 @@ export function Counter({
   value,
   suffix = "",
   className,
-  duration = 1100,
+  duration = 1350,
 }: {
   value: number;
   suffix?: string;
