@@ -23,9 +23,26 @@ import {
   FileWarning,
   ChevronRight,
 } from "lucide-react";
+import { ScrambleText, TargetingField, Tilt, Magnetic, Counter } from "@/components/fx";
 
 /* Apple-style easing — long, confident deceleration. */
 const EASE = [0.16, 1, 0.3, 1] as const;
+
+/* attack conveyor tokens — SOC-ticker texture between sections */
+const TICKER = [
+  "INSTRUCTION OVERRIDE",
+  "SYSTEM-PROMPT LEAK",
+  "ECHOLEAK · CVE-2025-32711",
+  "DAN PERSONA",
+  "BASE64 SMUGGLING",
+  "POISONED DOCUMENT",
+  "SPOOFED TOOL RESULT",
+  "MARKDOWN-IMAGE EXFIL",
+  "ZERO-WIDTH INJECTION",
+  "OWASP LLM01",
+  "REFUSAL SUPPRESSION",
+  "TOOL POISONING · MCP03",
+];
 
 /* ────────────────────────────────────────────────────────────
    Reveal — a single, reusable scroll-choreographed entrance.
@@ -145,7 +162,7 @@ function LiveTerminal() {
               className="mt-4 pt-4 border-t border-white/[0.06] flex items-center gap-5 animate-power-on"
             >
               <div className="leading-none">
-                <span className="font-display text-5xl font-extrabold text-alarm alarm-glow">F</span>
+                <span className="font-display text-5xl font-extrabold text-alarm alarm-glow animate-glitch">F</span>
               </div>
               <div className="text-xs text-text-mid leading-relaxed">
                 <span className="text-alarm font-semibold">6/9 attacks landed.</span> Leaked the system
@@ -256,7 +273,8 @@ export default function Landing() {
           <Link href="/" className="flex items-center gap-2.5 group">
             <Crosshair className="w-5 h-5 text-phosphor" />
             <span className="font-mono text-base font-bold tracking-tight text-text-hi">
-              GAUNTLET<span className="text-phosphor animate-blink">_</span>
+              <ScrambleText text="GAUNTLET" trigger="hover" />
+              <span className="text-phosphor animate-blink">_</span>
             </span>
             <span className="filelabel text-text-lo border border-white/10 rounded px-1.5 py-0.5 hidden sm:inline">
               RED-TEAM
@@ -284,7 +302,8 @@ export default function Landing() {
 
       {/* HERO */}
       <section className="relative px-6 pt-36 pb-20 sm:pt-44">
-        <div className="max-w-4xl mx-auto text-center">
+        <TargetingField />
+        <div className="relative z-10 max-w-4xl mx-auto text-center">
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -303,7 +322,7 @@ export default function Landing() {
           >
             Is your AI agent
             <br />
-            <span className="text-alarm-gradient alarm-glow">hackable?</span>
+            <ScrambleText text="hackable?" trigger="mount" className="text-alarm-gradient alarm-glow" />
           </motion.h1>
 
           <motion.p
@@ -323,19 +342,23 @@ export default function Landing() {
             transition={{ duration: 0.85, ease: EASE, delay: 0.19 }}
             className="mt-10 flex items-center justify-center gap-5 flex-wrap"
           >
-            <Link
-              href="/scan"
-              className="group inline-flex items-center gap-2 rounded-full bg-phosphor px-7 py-3.5 text-base font-semibold text-black glow-phosphor hover:bg-phosphor-soft transition-colors"
-            >
-              Run the gauntlet
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </Link>
-            <Link
-              href="/scan?demo=1"
-              className="inline-flex items-center gap-2 rounded-full border border-phosphor/40 bg-phosphor/[0.06] px-6 py-3.5 text-base font-semibold text-phosphor hover:bg-phosphor/[0.12] transition-colors"
-            >
-              Try a live demo
-            </Link>
+            <Magnetic>
+              <Link
+                href="/scan"
+                className="group inline-flex items-center gap-2 rounded-full bg-phosphor px-7 py-3.5 text-base font-semibold text-black glow-phosphor hover:bg-phosphor-soft transition-colors"
+              >
+                Run the gauntlet
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </Magnetic>
+            <Magnetic>
+              <Link
+                href="/scan?demo=1"
+                className="inline-flex items-center gap-2 rounded-full border border-phosphor/40 bg-phosphor/[0.06] px-6 py-3.5 text-base font-semibold text-phosphor hover:bg-phosphor/[0.12] transition-colors"
+              >
+                Try a live demo
+              </Link>
+            </Magnetic>
             <a href="#how" className="text-sm text-text-mid hover:text-text-hi transition-colors inline-flex items-center gap-1">
               how it works <ChevronRight className="w-4 h-4" />
             </a>
@@ -347,7 +370,11 @@ export default function Landing() {
             transition={{ duration: 0.8, delay: 0.3 }}
             className="mt-10 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 filelabel text-text-lo"
           >
-            {["21+ ATTACKS", "CANARY-VERIFIED", "BYO-KEY", "NO SIGN-UP", "OPEN-SOURCE"].map((s) => (
+            <span className="flex items-center gap-2">
+              <span className="w-1 h-1 rounded-full bg-phosphor" />
+              <Counter value={21} suffix="+" /> ATTACKS
+            </span>
+            {["CANARY-VERIFIED", "BYO-KEY", "NO SIGN-UP", "OPEN-SOURCE"].map((s) => (
               <span key={s} className="flex items-center gap-2">
                 <span className="w-1 h-1 rounded-full bg-phosphor" /> {s}
               </span>
@@ -372,9 +399,11 @@ export default function Landing() {
           initial={{ opacity: 0, y: 36 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.9, ease: EASE, delay: 0.32 }}
-          className="max-w-3xl mx-auto mt-16"
+          className="relative z-10 max-w-3xl mx-auto mt-16"
         >
-          <LiveTerminal />
+          <Tilt>
+            <LiveTerminal />
+          </Tilt>
         </motion.div>
       </section>
 
@@ -410,6 +439,17 @@ export default function Landing() {
           </div>
         </div>
       </section>
+
+      {/* ATTACK CONVEYOR */}
+      <div className="border-y border-white/[0.05] overflow-hidden py-3 marquee-mask" aria-hidden>
+        <div className="flex w-max whitespace-nowrap animate-marquee hover:[animation-play-state:paused]">
+          {[...TICKER, ...TICKER].map((t, i) => (
+            <span key={i} className="filelabel text-text-lo mx-6 flex items-center gap-2 shrink-0">
+              <span className="w-1 h-1 rounded-full bg-phosphor" /> {t}
+            </span>
+          ))}
+        </div>
+      </div>
 
       {/* HOW IT WORKS */}
       <section id="how" className="py-24 px-6">
